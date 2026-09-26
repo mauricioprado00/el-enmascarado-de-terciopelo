@@ -1,0 +1,40 @@
+# Bumps the el-enmascarado-de-terciopelo submodule in mauricioprado00.github.io,
+# which triggers that repo's GitHub Pages build.
+#
+# Requires the SITE_DEPLOY_TOKEN secret: a fine-grained PAT with access to
+# mauricioprado00/mauricioprado00.github.io only, permission "Contents: Read and write".
+name: Deploy to mauricioprado00.github.io
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+jobs:
+  bump-submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: mauricioprado00/mauricioprado00.github.io
+          token: ${{ secrets.SITE_DEPLOY_TOKEN }}
+          submodules: true
+
+      - name: Move submodule to latest master
+        run: git submodule update --remote el-enmascarado-de-terciopelo
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet; then
+            echo "Submodule already up to date"
+            exit 0
+          fi
+          sha=$(git -C el-enmascarado-de-terciopelo rev-parse --short HEAD)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update el-enmascarado-de-terciopelo to $sha"
+          git push
