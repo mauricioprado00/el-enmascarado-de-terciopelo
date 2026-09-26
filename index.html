@@ -236,6 +236,10 @@
     .fighter-card.ko .fighter-image { filter: grayscale(1) brightness(.7); }
     .fighter-card.striking { animation: lunge .5s ease-out; }
     .fighter-card.fumbled { animation: wobble .6s; }
+    .card-stamp.up { border-color: #35cf57; color: #35cf57; }
+    .fighter-card.rising { border-color: #35cf57; box-shadow: 0 0 30px #35cf57aa; animation: rise .8s ease-out; }
+    .fighter-card.rising .damage-pop { color: #35cf57; animation: pop-up 1.6s ease-out forwards; }
+    @keyframes rise { 0% { transform: translateY(26px) rotate(6deg); filter: grayscale(1); } 60% { transform: translateY(-12px); } }
     @keyframes shake { 15%, 55% { transform: translateX(-10px) rotate(-2deg); } 35%, 75% { transform: translateX(10px) rotate(2deg); } }
     @keyframes wobble { 30% { transform: rotate(-4deg); } 60% { transform: rotate(3deg); } }
     @keyframes lunge { 40% { transform: translateX(34px) scale(1.06); } }
@@ -679,6 +683,14 @@
       "🐍", "🦈", "🐉", "🦍", "🐻", "🦂", "🦖", "🐯", "💀", "👑", "🚀", "✨"
     ];
     const MIN_STRONG_POWER = 30;
+    // Probabilidad de levantarse de la lona; se reduce a la mitad con cada nueva caída a la lona en la misma caída.
+    const GET_UP_CHANCE = 0.35;
+
+    // Vida al levantarse: log-uniforme entre 1 y 100. Cualquier valor es posible, pero la mitad
+    // de las veces es 10 o menos, tres de cada cuatro no pasa de 32 y un 100 sale una vez cada mil.
+    function getUpHp() {
+      return Math.max(1, Math.round(Math.pow(100, Math.random())));
+    }
 
     let players = [];
     let current = 0;
@@ -929,7 +941,7 @@
 
     $("#setup-form").addEventListener("submit", event => {
       event.preventDefault();
-      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0 }));
+      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0, knockdowns: 0 }));
       players.forEach((player, i) => {
         player.label = displayName(i);
         player.spoken = spokenName(i);
@@ -1067,8 +1079,8 @@
 
     function clearEffects() {
       document.querySelectorAll(".fighter-card").forEach(card => {
-        card.classList.remove("damaged", "ko", "striking", "fumbled");
-        card.querySelector(".card-stamp").classList.remove("show");
+        card.classList.remove("damaged", "ko", "striking", "fumbled", "rising");
+        card.querySelector(".card-stamp").classList.remove("show", "up");
       });
     }
 
@@ -1262,9 +1274,13 @@
         damage: 0,
         blocked: 0,
         newHp: defender.hp,
+        knockdown: false,
+        getsUp: false,
+        riseHp: 0,
         ko: false,
         extra: false,
         applied: false,
+        risen: false,
         finished: false
       };
       if (!outcome.invalid) {
@@ -1272,8 +1288,14 @@
         outcome.damage = Math.round(rawDamage * (1 - defender.power * 0.004));
         outcome.blocked = rawDamage - outcome.damage;
         outcome.newHp = Math.max(0, defender.hp - outcome.damage);
-        outcome.ko = outcome.newHp === 0;
-        outcome.extra = !outcome.ko && !isExtraTurn && Math.random() < 0.2;
+        outcome.knockdown = outcome.newHp === 0;
+        if (outcome.knockdown) {
+          outcome.getsUp = Math.random() < GET_UP_CHANCE / 2 ** defender.knockdowns;
+          if (outcome.getsUp) outcome.riseHp = getUpHp();
+        }
+        // Solo es caída si no se levanta de la lona.
+        outcome.ko = outcome.knockdown && !outcome.getsUp;
+        outcome.extra = !outcome.knockdown && !isExtraTurn && Math.random() < 0.2;
       }
       pendingOutcome = outcome;
       strongAttack = false;
@@ -1295,6 +1317,13 @@
         playClip(outcome.attack.sound).then(() => {
           if (token === flowToken) return narrate(resultNarration(outcome));
         }).then(() => {
+          // La cuenta se corta en el dos: se levanta.
+          if (token !== flowToken || !outcome.getsUp) return;
+          applyRise(outcome);
+          playRiseEffects(outcome);
+          $("#message").innerHTML = resultHtml(outcome);
+          return narrate(riseNarration(outcome));
+        }).then(() => {
           if (token !== flowToken) return;
           setTimeout(() => { if (token === flowToken) finishResult(); }, outcome.ko ? 500 : 1000);
         });
@@ -1307,6 +1336,7 @@
       const attacker = players[outcome.attacker];
       if (outcome.isStrong) attacker.power -= MIN_STRONG_POWER;
       players[outcome.defender].hp = outcome.newHp;
+      if (outcome.knockdown) players[outcome.defender].knockdowns++;
       if (outcome.ko) {
         attacker.falls++;
         extraTurnPending = false;
@@ -1330,12 +1360,44 @@
       attackerCard.classList.add("striking");
       defenderCard.querySelector(".damage-pop").textContent = `-${outcome.damage}`;
       defenderCard.classList.add("damaged");
-      if (outcome.ko) {
+      if (outcome.knockdown) {
         defenderCard.classList.add("ko");
         const stamp = defenderCard.querySelector(".card-stamp");
         stamp.textContent = "K.O.";
         stamp.classList.add("show");
       }
+    }
+
+    function applyRise(outcome) {
+      if (!outcome.getsUp || outcome.risen) return;
+      outcome.risen = true;
+      players[outcome.defender].hp = outcome.riseHp;
+      updateBars(outcome.defender);
+    }
+
+    function playRiseEffects(outcome) {
+      const card = cardOf(outcome.defender);
+      const stamp = card.querySelector(".card-stamp");
+      card.classList.remove("damaged", "ko");
+      stamp.classList.remove("show");
+      void card.offsetWidth; // reinicia las animaciones
+      card.querySelector(".damage-pop").textContent = `+${outcome.riseHp}`;
+      stamp.textContent = "¡ARRIBA!";
+      stamp.classList.add("up", "show");
+      card.classList.add("rising");
+    }
+
+    function riseNarration(outcome) {
+      const defender = players[outcome.defender].spoken;
+      const hp = outcome.riseHp;
+      if (hp <= 10) {
+        return pick([
+          `¡Pero se levanta! ${defender} vuelve con solo ${hp} de vida. ¡Apenas se tiene en pie!`,
+          `¡No, no, se levanta! ${defender} sigue en la pelea de milagro, con ${hp} de vida.`
+        ]);
+      }
+      if (hp < 40) return `¡Se levanta! ¡${defender} vuelve a la pelea con ${hp} de vida!`;
+      return `¡Increíble! ¡${defender} se levanta como nuevo, con ${hp} de vida! ¡Qué resistencia!`;
     }
 
     function resultHtml(outcome) {
@@ -1348,7 +1410,8 @@
         return lines.join("<br>");
       }
       lines.push(`${defender} bloquea ${outcome.blocked} y recibe <strong>${outcome.damage}</strong> de daño.`);
-      if (outcome.ko) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
+      if (outcome.knockdown) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
+      if (outcome.risen) lines.push(`🆙 <strong>¡${defender} SE LEVANTA</strong> con ${outcome.riseHp} de vida!`);
       if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
       return lines.join("<br>");
     }
@@ -1367,8 +1430,8 @@
         parts.push(pick(["¡Pero no! ¡El árbitro lo invalida! ¡Qué polémica!", `¡El árbitro dice que no! ¡${attack} no vale!`]));
         return parts.join(" ");
       }
-      if (outcome.ko) {
-        parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos! ¡Tres!`);
+      if (outcome.knockdown) {
+        parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos!${outcome.getsUp ? "" : " ¡Tres!"}`);
         return parts.join(" ");
       }
       if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
@@ -1386,6 +1449,7 @@
       flowToken++;
       stopNarration();
       applyOutcome(outcome);
+      applyRise(outcome);
       if (outcome.ko) {
         showFallCelebration(outcome.attacker);
         return;
@@ -1456,6 +1520,7 @@
       players.forEach(player => {
         player.hp = 100;
         player.power = 100;
+        player.knockdowns = 0;
       });
       current = starterIndex;
       extraTurnPending = false;
