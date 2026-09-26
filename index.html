@@ -24,8 +24,9 @@
       box-shadow: 0 4px 0 #7f1022;
       cursor: pointer;
     }
-    button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    button:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
     button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    button.secondary { background: #4a2a58; box-shadow: 0 4px 0 #26122e; }
     h1 { margin: 8px 0 24px; font-size: clamp(4rem, 16vw, 9rem); color: #ffd230; text-shadow: 5px 5px #d9263f; }
     h2 { color: #ffd230; letter-spacing: 2px; }
     .screen { display: none; min-height: 100vh; padding: 24px 14px; }
@@ -38,16 +39,10 @@
       background: rgba(12, 5, 18, .92);
       box-shadow: 0 0 25px rgba(255, 210, 48, .24);
     }
-    .choice-row, .setup-grid, .fighters, .attacks { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+    .choice-row, .setup-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
     .choice-row button { min-width: 180px; font-size: 1.25rem; }
-    .player-form {
-      flex: 1 1 250px;
-      padding: 16px;
-      border-radius: 12px;
-      background: #281132;
-    }
-    label { display: block; margin: 10px 0 5px; text-align: left; color: #ffd230; }
-    input, select {
+    label, .field-label { display: block; margin: 10px 0 5px; text-align: left; color: #ffd230; }
+    input {
       width: 100%;
       padding: 11px;
       border: 2px solid #7f4a8d;
@@ -56,107 +51,233 @@
       background: #15091b;
     }
     .fighter-icon { display: block; font-size: 4rem; }
-    .fighter-image {
-      width: 100%;
-      height: 150px;
-      border-radius: 10px;
-      object-fit: cover;
-      object-position: center 22%;
-      background: #0a777d;
+
+    .mute-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      font-size: 1.5rem;
+      background: #281132;
+      box-shadow: 0 3px 0 #120719;
+      z-index: 30;
     }
-    #game-screen { justify-content: flex-start; }
-    #game-screen h2 { margin: 0 0 12px; font-size: 2rem; }
-    .fighters { width: min(1100px, 100%); align-items: stretch; }
-    .fighter-card {
-      flex: 1 1 230px;
+
+    /* ---------- Elección de luchador ---------- */
+    .picker {
+      flex: 1 1 260px;
       max-width: 340px;
       padding: 14px;
+      border-radius: 12px;
+      background: #281132;
+      outline: none;
+    }
+    .picker:focus-within { box-shadow: 0 0 0 3px #ffd23066; }
+    .picker h3 { margin: 0 0 10px; }
+    .picker-main { display: flex; align-items: center; gap: 8px; }
+    .arrow {
+      flex: none;
+      width: 44px;
+      height: 72px;
+      padding: 0;
+      font-size: 2.4rem;
+      line-height: 1;
+      background: #5a2875;
+      box-shadow: 0 4px 0 #2d1339;
+    }
+    .picker-preview { flex: 1; min-width: 0; margin: 0; }
+    .picker-preview img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 320 / 420;
+      max-height: 40vh;
+      border: 3px solid #ffd230;
+      border-radius: 10px;
+      object-fit: contain;
+      background: #0a0510;
+    }
+    .picker-preview img.swap { animation: swap-in .3s ease-out; }
+    .picker-preview figcaption { margin-top: 8px; }
+    .picker-preview strong { display: block; font-size: 1.3rem; }
+    .picker-preview span { color: #ffd230; font-family: Arial, sans-serif; font-weight: bold; }
+    .thumbs { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+    .thumb {
+      padding: 2px;
+      border: 3px solid transparent;
+      border-radius: 10px;
+      background: #15091b;
+      box-shadow: none;
+    }
+    .thumb img {
+      display: block;
+      width: 54px;
+      height: 54px;
+      border-radius: 6px;
+      object-fit: cover;
+      object-position: center 14%;
+    }
+    .thumb[aria-checked="true"] { border-color: #ffd230; box-shadow: 0 0 12px #ffd23099; }
+    @keyframes swap-in { from { transform: scale(.85); opacity: .3; } }
+
+    /* ---------- Pantalla de pelea ---------- */
+    #game-screen { justify-content: flex-start; gap: 12px; }
+    #fall-number { margin: 4px 56px 0; color: #ffd230; font-size: clamp(1rem, 3.5vw, 1.35rem); letter-spacing: 1px; }
+    .stage { display: flex; width: min(1100px, 100%); flex-direction: column; align-items: center; gap: 14px; }
+    .fighters { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; }
+    .vs {
+      order: 1;
+      color: #ffd230;
+      font-size: clamp(2rem, 8vw, 4rem);
+      text-shadow: 4px 4px #d9263f;
+      transition: font-size .45s ease;
+    }
+    [data-phase="choose"] .vs { font-size: 1.8rem; }
+    .fighter-card {
+      position: relative;
+      width: min(290px, 42vw);
+      padding: 12px;
       border: 3px solid #755381;
       border-radius: 14px;
       background: #21102a;
-      transition: .2s;
+      transition: width .45s ease, padding .45s ease, border-color .3s, box-shadow .3s, opacity .3s, filter .3s;
     }
-    .fighter-card.current {
-      order: -1;
-      border-color: #ffd230;
-      box-shadow: 0 0 28px #ffd230aa;
-      transform: scale(1.03);
-    }
-    .fighter-card.target-option {
-      cursor: pointer;
-      opacity: .55;
-      filter: grayscale(.65);
-    }
-    .fighter-card.target-option:hover,
-    .fighter-card.target-option:focus {
-      opacity: .85;
-      filter: none;
-      border-color: #ff8d30;
-      outline: none;
-    }
-    .fighter-card.selected-target {
-      opacity: 1;
-      filter: none;
-      border-color: #ff3b30;
-      box-shadow: 0 0 24px #ff3b30aa;
-    }
-    .turn-badge, .target-badge {
+    .fighter-card.benched { display: none; }
+    .fighter-card.attacker { border-color: #ffd230; box-shadow: 0 0 28px #ffd230aa; }
+    .fighter-card.defender { border-color: #ff3b30; box-shadow: 0 0 24px #ff3b30aa; }
+    .fighter-card.option { cursor: pointer; opacity: .6; filter: grayscale(.6); }
+    .fighter-card.option:hover, .fighter-card.option:focus-visible { opacity: .9; filter: none; border-color: #ff8d30; outline: none; }
+    .fighter-card.option.defender { opacity: 1; filter: none; }
+    [data-phase="intro"].multi .fighter-card { width: min(250px, 42vw); }
+    .fighter-card.compact { width: min(210px, 40vw); padding: 8px; }
+    .card-badge {
+      min-height: 1.9em;
       margin: 0 0 8px;
-      padding: 7px;
+      padding: 5px;
       border-radius: 7px;
       color: #160a05;
       background: #ffd230;
+      transition: margin .45s, padding .45s;
     }
-    .target-badge { color: #fff; background: #d9263f; }
-    .fighter-card.eliminated { filter: grayscale(1); opacity: .45; }
-    .fighter-card h3 { margin: 5px; font-size: 1.45rem; }
-    .fighter-card p { margin: 5px; font-family: Arial, sans-serif; }
-    .falls { color: #ffd230; font-size: 1.15rem; letter-spacing: 3px; }
-    .hp-shell { height: 24px; margin: 12px 0 4px; overflow: hidden; border: 3px solid #fff; background: #310a11; }
-    .hp-bar { height: 100%; background: linear-gradient(90deg, #35cf57, #bdf537); transition: width .45s; }
-    .power-shell { height: 18px; margin: 8px 0 3px; overflow: hidden; border: 2px solid #fff; background: #091d38; }
-    .power-bar { height: 100%; background: linear-gradient(90deg, #1687ff, #57e5ff); transition: width .45s; }
-    .hp-text, .power-text { font-family: Arial, sans-serif; font-size: 1rem; }
+    .card-badge:empty { visibility: hidden; }
+    .defender .card-badge { color: #fff; background: #d9263f; }
+    .option:not(.defender) .card-badge { color: #fff; background: #5a2875; }
+    .compact .card-badge { margin-bottom: 5px; padding: 2px; font-size: .85rem; }
+    .card-art { position: relative; overflow: hidden; border-radius: 10px; }
+    .fighter-image {
+      display: block;
+      width: 100%;
+      height: clamp(130px, 26vh, 210px);
+      object-fit: cover;
+      object-position: center 12%;
+      background: #0a0510;
+      transition: height .45s ease, filter .3s;
+    }
+    .compact .fighter-image { height: 64px; object-position: center 22%; }
+    .fighter-card h3 { margin: 6px 0 2px; font-size: 1.35rem; transition: font-size .45s; }
+    .compact h3 { font-size: 1rem; }
+    .card-details {
+      max-height: 90px;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      transition: max-height .45s ease, opacity .3s;
+    }
+    .card-details p { margin: 3px 0; }
+    .specials { color: #ffcf7a; font-size: .85rem; }
+    .compact .card-details, .compact .power-text { max-height: 0; opacity: 0; }
+    .falls { color: #ffd230; font-size: 1.05rem; letter-spacing: 3px; }
+    .hp-shell { height: 22px; margin: 8px 0 3px; overflow: hidden; border: 3px solid #fff; background: #310a11; }
+    .hp-bar { height: 100%; background: linear-gradient(90deg, #35cf57, #bdf537); transition: width .6s ease; }
+    .hp-bar.low { background: linear-gradient(90deg, #ff3b30, #ff9d24); }
+    .power-shell { height: 16px; margin: 6px 0 3px; overflow: hidden; border: 2px solid #fff; background: #091d38; }
+    .power-bar { height: 100%; background: linear-gradient(90deg, #1687ff, #57e5ff); transition: width .6s ease; }
+    .hp-text, .power-text { max-height: 40px; overflow: hidden; font-family: Arial, sans-serif; font-size: .95rem; transition: max-height .45s, opacity .3s; }
+    .compact .hp-shell { height: 16px; margin-top: 4px; }
+    .compact .power-shell { height: 10px; }
+
+    /* efectos del golpe */
+    .card-stamp {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      padding: 4px 14px;
+      border: 4px solid #ff3b30;
+      border-radius: 8px;
+      color: #ff3b30;
+      font-size: 2.4rem;
+      background: #120719cc;
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(-14deg) scale(2);
+      pointer-events: none;
+    }
+    .card-stamp.show { animation: stamp .45s .25s ease-out forwards; }
+    .damage-pop {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      color: #ff3b30;
+      font-size: 3.4rem;
+      text-shadow: 3px 3px #000, 0 0 14px #fff;
+      opacity: 0;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .fighter-card.damaged { border-color: #ff3b30; animation: shake .55s; }
+    .fighter-card.damaged .card-art::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, #ff3b30cc, #ff3b3000 70%);
+      animation: flash 1.1s ease-out forwards;
+    }
+    .fighter-card.damaged .fighter-image { filter: saturate(1.6) contrast(1.2); }
+    .fighter-card.damaged .damage-pop { animation: pop-up 1.6s ease-out forwards; }
+    .fighter-card.ko .fighter-image { filter: grayscale(1) brightness(.7); }
+    .fighter-card.striking { animation: lunge .5s ease-out; }
+    .fighter-card.fumbled { animation: wobble .6s; }
+    @keyframes shake { 15%, 55% { transform: translateX(-10px) rotate(-2deg); } 35%, 75% { transform: translateX(10px) rotate(2deg); } }
+    @keyframes wobble { 30% { transform: rotate(-4deg); } 60% { transform: rotate(3deg); } }
+    @keyframes lunge { 40% { transform: translateX(34px) scale(1.06); } }
+    @keyframes flash { from { opacity: 1; } to { opacity: .15; } }
+    @keyframes pop-up {
+      0% { opacity: 0; transform: translate(-50%, 20px) scale(.6); }
+      20% { opacity: 1; transform: translate(-50%, 0) scale(1.25); }
+      70% { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -40px) scale(1); }
+    }
+    @keyframes stamp { to { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(1); } }
+
+    /* paneles de cada fase */
     .arena {
       width: min(920px, 100%);
-      margin-top: 18px;
-      padding: 18px;
+      padding: 16px;
       border-radius: 14px;
       background: #100716dd;
     }
-    #turn { margin: 0 0 12px; color: #ffd230; font-size: clamp(1.4rem, 5vw, 2.2rem); }
-    #fall-number { margin: 0 0 8px; color: #fff; font-family: Arial, sans-serif; }
-    .target-wrap {
-      margin-bottom: 14px;
+    .phase-panel { display: none; }
+    [data-phase="intro"] #intro-panel,
+    [data-phase="choose"] #choose-panel,
+    [data-phase="result"] #result-panel { display: block; animation: panel-in .35s ease-out; }
+    @keyframes panel-in { from { opacity: 0; transform: translateY(14px); } }
+    .turn-title { margin: 0 0 8px; color: #ffd230; font-size: clamp(1.4rem, 5vw, 2.2rem); }
+    .intro-line { margin: 0 0 12px; font: italic 1.15rem Arial, sans-serif; color: #f3dcff; }
+    .target-help {
+      margin: 0 auto 14px;
       padding: 10px;
       border: 2px solid #ff8d30;
       border-radius: 9px;
       color: #ffd230;
-      font-family: Arial, sans-serif;
-      font-weight: bold;
+      font: bold 1rem Arial, sans-serif;
       background: #3b1a12;
     }
-    .power-mode {
-      margin: 0 auto 16px;
-      background: #285a8f;
-      box-shadow: 0 4px 0 #123252;
-    }
-    .power-mode.active {
-      color: #1c0b05;
-      background: #ff9d24;
-      box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ff9d24aa;
-    }
-    .power-help {
-      margin: -7px 0 13px;
-      color: #a9dfff;
-      font: .85rem Arial, sans-serif;
-    }
-    .attacks button {
+    .confirm-button { min-width: 240px; font-size: 1.5rem; }
+    .choose-title { margin: 0 0 12px; color: #ffd230; font-size: clamp(1.1rem, 4vw, 1.6rem); }
+    .attacks { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+    .attack-btn {
       display: flex;
-      flex: 1 1 130px;
-      max-width: 180px;
-      min-height: 92px;
-      padding: 9px;
+      min-height: 88px;
+      padding: 8px;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -164,32 +285,51 @@
       background: linear-gradient(145deg, #713a8b, #411d54);
       box-shadow: 0 4px 0 #351443;
     }
+    .attack-btn.special { background: linear-gradient(145deg, #a53a5d, #57183a); }
+    .attack-btn.custom { background: linear-gradient(145deg, #2d7a8c, #16414f); }
+    .attack-btn.free { border: 2px dashed #ffd230; background: #e67e00; box-shadow: 0 4px 0 #824700; }
+    .attack-btn[aria-pressed="true"] {
+      color: #1c0b05;
+      background: linear-gradient(145deg, #ffe066, #ff9d24);
+      box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ffd230;
+      transform: translateY(-2px);
+    }
+    .attack-btn.new { animation: new-attack 1.2s ease-out; }
+    @keyframes new-attack { 0%, 40% { box-shadow: 0 0 0 4px #57e5ff, 0 0 26px #57e5ff; transform: scale(1.08); } }
     .attack-art {
       display: grid;
-      width: 48px;
-      height: 48px;
+      width: 46px;
+      height: 46px;
       place-items: center;
       border: 2px solid #ffd230;
       border-radius: 50%;
-      font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-      font-size: 1.8rem;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1.7rem;
       line-height: 1;
       background: radial-gradient(circle, #fff3 0 35%, #120719 70%);
-      box-shadow: 0 0 10px #ffd23066;
     }
     .attack-name { font-family: Arial, sans-serif; font-size: .86rem; font-weight: bold; }
-    .attacks button.free { background: #e67e00; box-shadow: 0 4px 0 #824700; }
-    #message {
-      min-height: 58px;
-      margin: 18px 0 0;
-      padding: 12px;
-      border-left: 5px solid #ffd230;
-      font-family: Arial, sans-serif;
-      font-size: 1.15rem;
+    .choose-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 16px; }
+    .power-mode { background: #285a8f; box-shadow: 0 4px 0 #123252; }
+    .power-mode.active { color: #1c0b05; background: #ff9d24; box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ff9d24aa; }
+    .attack-go { min-width: 240px; font-size: 1.35rem; }
+    .power-help { margin: 10px 0 0; color: #a9dfff; font: .85rem Arial, sans-serif; }
+    .result-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-left: 6px solid #ffd230;
+      border-radius: 8px;
+      text-align: left;
       background: #281132;
     }
-    .hit { animation: shake .35s; }
-    @keyframes shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+    .result-icon { flex: none; font-size: 3rem; animation: pulse 1s ease-in-out infinite alternate; }
+    #message { font-family: Arial, sans-serif; font-size: 1.2rem; line-height: 1.45; }
+    #next-button { margin-top: 14px; }
+    @keyframes pulse { to { transform: scale(1.15); } }
+
+    /* ---------- Modal de ataque libre ---------- */
     .modal {
       position: fixed;
       inset: 0;
@@ -200,79 +340,176 @@
       z-index: 10;
     }
     .modal.open { display: grid; }
-    .modal .panel { max-width: 460px; }
-    .modal input { margin: 12px 0; }
+    .modal .panel { max-width: 480px; max-height: calc(100vh - 40px); overflow-y: auto; }
+    .modal h2 { margin-top: 0; }
+    .icon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; margin-bottom: 14px; }
+    .icon-choice {
+      padding: 6px 0;
+      border: 2px solid transparent;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1.5rem;
+      background: #281132;
+      box-shadow: none;
+    }
+    .icon-choice[aria-checked="true"] { border-color: #ffd230; background: #5a2875; box-shadow: 0 0 10px #ffd23099; }
+    [hidden] { display: none !important; }
+    .input-row { display: flex; gap: 6px; }
+    .input-row input { flex: 1; min-width: 0; }
+    .tool-button {
+      flex: none;
+      width: 48px;
+      padding: 0;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1.4rem;
+      background: #5a2875;
+      box-shadow: 0 3px 0 #2d1339;
+    }
+    .tool-button[aria-expanded="true"] { background: #7f4a8d; }
+    .tool-button.listening, #record-button.recording { background: #ff3b30; animation: pulse .6s ease-in-out infinite alternate; }
+    .emoji-keyboard {
+      max-height: 190px;
+      margin-top: 8px;
+      padding: 4px 8px 8px;
+      overflow-y: auto;
+      border: 2px solid #7f4a8d;
+      border-radius: 8px;
+      text-align: left;
+      background: #15091b;
+    }
+    .emoji-keyboard h4 { margin: 6px 0 4px; color: #ffd230; font: bold .8rem Arial, sans-serif; }
+    .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 4px; }
+    .emoji-key {
+      padding: 4px 0;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1.35rem;
+      background: #281132;
+      box-shadow: none;
+    }
+    .record-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0 4px; }
+    .record-row button { padding: 10px 12px; font-size: .95rem; }
+    .voice-status { min-height: 1.3em; color: #a9dfff; font: .9rem Arial, sans-serif; }
+    .free-preview { display: flex; justify-content: center; margin: 0 0 14px; }
+    .free-preview .attack-btn { width: 150px; cursor: default; }
+
+    /* ---------- Festejo de caída ---------- */
     .fall-celebration {
       position: fixed;
       inset: 0;
       display: grid;
       overflow: hidden;
       place-items: center;
-      pointer-events: none;
       visibility: hidden;
       opacity: 0;
-      background: #120719dd;
-      transition: opacity .2s;
+      background: radial-gradient(circle, #4d1763f2, #08030cfa 70%);
+      transition: opacity .4s, visibility .4s;
       z-index: 20;
     }
     .fall-celebration.open { visibility: visible; opacity: 1; }
-    .celebration-message {
+    .rays {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 220vmax;
+      height: 220vmax;
+      margin: -110vmax 0 0 -110vmax;
+      background: repeating-conic-gradient(#ffd2302a 0 9deg, #ffd23000 9deg 18deg);
+      animation: spin 20s linear infinite;
+    }
+    .celebration-content {
       position: relative;
-      padding: 28px;
-      color: #ffd230;
-      font-size: clamp(2.6rem, 12vw, 6rem);
-      text-shadow: 5px 5px #d9263f;
-      transform: scale(.5) rotate(-5deg);
+      display: flex;
+      max-height: 100vh;
+      padding: 16px;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
       z-index: 2;
     }
-    .fall-celebration.open .celebration-message {
-      animation: celebration-pop .55s ease-out forwards;
+    .celebration-title { color: #ffd230; font-size: clamp(3rem, 13vw, 6.5rem); line-height: 1; text-shadow: 5px 5px #d9263f; }
+    .open .celebration-title { animation: slam .7s cubic-bezier(.2, 1.6, .4, 1) both; }
+    .crown { font-size: 3rem; line-height: 1; }
+    .open .crown { animation: slam .6s .5s both, bounce 1s 1.2s ease-in-out infinite alternate; }
+    .champion {
+      width: min(300px, 72vw);
+      padding: 10px;
+      border: 4px solid #ffd230;
+      border-radius: 16px;
+      background: #21102a;
     }
-    .celebration-message span {
+    .open .champion { animation: champion-in .8s .3s both, glow 1.2s 1.1s ease-in-out infinite alternate; }
+    .champion img {
       display: block;
-      margin-top: 10px;
-      color: #fff;
-      font: bold clamp(1.2rem, 5vw, 2rem) Arial, sans-serif;
-      text-shadow: 2px 2px #351443;
+      width: 100%;
+      height: min(260px, 30vh);
+      border-radius: 10px;
+      object-fit: cover;
+      object-position: center 10%;
     }
+    .champion-name { margin-top: 8px; font-size: clamp(1.2rem, 5vw, 1.9rem); line-height: 1.1; overflow-wrap: anywhere; }
+    .champion-falls { color: #ffd230; font-size: 1.6rem; letter-spacing: 6px; }
+    .champion-falls .new { display: inline-block; }
+    .open .champion-falls .new { animation: dot-pop .7s 1.2s both; }
+    .celebration-sub { color: #fff; font: bold clamp(1.1rem, 4.5vw, 1.7rem) Arial, sans-serif; text-shadow: 2px 2px #351443; }
+    .scoreboard { color: #f3dcff; font: 1rem Arial, sans-serif; }
+    .celebration-continue { font-size: 1.3rem; opacity: 0; transform: translateY(12px); transition: opacity .4s, transform .4s; }
+    .celebration-continue.ready { opacity: 1; transform: none; }
     .confetti {
       position: absolute;
       top: -12%;
       width: 14px;
-      height: 32px;
+      height: 30px;
       background: #ffd230;
-      animation: confetti-fall 1.6s linear infinite;
+      animation: confetti-fall 2.6s linear infinite;
+      z-index: 1;
     }
-    .confetti:nth-child(2n) { background: #ff3b30; animation-delay: -.4s; }
-    .confetti:nth-child(3n) { background: #35cf57; animation-delay: -.8s; }
-    .confetti:nth-child(4n) { background: #1687ff; animation-delay: -1.2s; }
-    .confetti:nth-child(1) { left: 8%; }
-    .confetti:nth-child(2) { left: 18%; }
-    .confetti:nth-child(3) { left: 29%; }
-    .confetti:nth-child(4) { left: 41%; }
-    .confetti:nth-child(5) { left: 53%; }
-    .confetti:nth-child(6) { left: 65%; }
-    .confetti:nth-child(7) { left: 76%; }
-    .confetti:nth-child(8) { left: 88%; }
-    @keyframes celebration-pop {
-      60% { transform: scale(1.15) rotate(2deg); }
-      100% { transform: scale(1) rotate(0); }
-    }
-    @keyframes confetti-fall {
-      to { transform: translateY(125vh) rotate(720deg); }
-    }
+    .confetti:nth-child(2n) { background: #ff3b30; animation-delay: -.6s; }
+    .confetti:nth-child(3n) { background: #35cf57; animation-delay: -1.2s; }
+    .confetti:nth-child(4n) { background: #1687ff; animation-delay: -1.8s; }
+    .confetti:nth-child(5n) { animation-duration: 3.3s; }
+    .confetti:nth-child(2) { left: 6%; } .confetti:nth-child(3) { left: 15%; }
+    .confetti:nth-child(4) { left: 24%; } .confetti:nth-child(5) { left: 33%; }
+    .confetti:nth-child(6) { left: 42%; } .confetti:nth-child(7) { left: 51%; }
+    .confetti:nth-child(8) { left: 60%; } .confetti:nth-child(9) { left: 69%; }
+    .confetti:nth-child(10) { left: 78%; } .confetti:nth-child(11) { left: 87%; }
+    .confetti:nth-child(12) { left: 95%; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slam { from { opacity: 0; transform: scale(3) rotate(-8deg); } }
+    @keyframes champion-in { from { opacity: 0; transform: translateY(60px) scale(.6); } }
+    @keyframes glow { from { box-shadow: 0 0 18px #ffd23088; } to { box-shadow: 0 0 60px #ffd230, 0 0 110px #ff9d2488; } }
+    @keyframes bounce { to { transform: translateY(-10px); } }
+    @keyframes dot-pop { 0% { transform: scale(0); } 60% { transform: scale(1.8); } }
+    @keyframes confetti-fall { to { transform: translateY(125vh) rotate(720deg); } }
+
     #winner-screen h2 { font-size: clamp(2.5rem, 10vw, 5rem); }
+    .winner-image {
+      width: min(240px, 60vw);
+      aspect-ratio: 320 / 420;
+      border: 4px solid #ffd230;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 0 40px #ffd230aa;
+    }
+
     @media (max-width: 540px) {
       .screen { padding: 15px 8px; }
-      .panel, .arena { padding: 14px; }
-      .fighter-card { flex-basis: 140px; }
-      .fighter-image { height: 110px; }
-      .attacks { gap: 9px; }
-      .attacks button { flex: 1 1 140px; }
+      .panel, .arena { padding: 12px; }
+      .fighters { gap: 6px; }
+      .fighter-card,
+      .fighter-card.compact,
+      [data-phase="intro"].multi .fighter-card { width: calc(50vw - 50px); padding: 8px; }
+      .fighter-card h3 { font-size: 1.05rem; }
+      .card-details { font-size: .8rem; }
+      .vs { font-size: 1.6rem; }
+      .attacks { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+      .attack-btn { min-height: 78px; }
+      .attack-go, .confirm-button { width: 100%; min-width: 0; }
+      .result-icon { font-size: 2.2rem; }
+      #message { font-size: 1.05rem; }
     }
   </style>
 </head>
 <body>
+  <button id="mute-button" class="mute-button" type="button" aria-label="Silenciar sonido">🔊</button>
   <main>
     <section id="start-screen" class="screen active">
       <h1>LUCHA</h1>
@@ -291,7 +528,7 @@
 
     <section id="setup-screen" class="screen">
       <div class="panel">
-        <h2>PREPARAR LUCHADORES</h2>
+        <h2>ELIGE TU LUCHADOR</h2>
         <form id="setup-form">
           <div id="setup-grid" class="setup-grid"></div>
           <button type="submit" style="margin-top:20px">¡COMENZAR PELEA!</button>
@@ -300,50 +537,95 @@
     </section>
 
     <section id="game-screen" class="screen">
-      <h2>PELEA</h2>
-      <div id="fighters" class="fighters"></div>
-      <div class="arena">
-        <div id="fall-number"></div>
-        <div id="turn"></div>
-        <div id="target-status" class="target-wrap">Selecciona la carta de un contrincante para atacar.</div>
-        <button id="power-mode" class="power-mode" type="button">💥 GOLPE FUERTE: NO</button>
-        <div class="power-help">Más daño por 30 de poder. Con más poder también recibes menos daño.</div>
-        <div id="attacks" class="attacks"></div>
-        <div id="message">¡Que comience la pelea!</div>
+      <div id="fall-number"></div>
+      <div id="stage" class="stage" data-phase="intro">
+        <div id="fighters" class="fighters"></div>
+        <div class="arena">
+          <div id="intro-panel" class="phase-panel">
+            <div id="turn-title" class="turn-title"></div>
+            <p id="intro-line" class="intro-line"></p>
+            <p id="target-help" class="target-help"></p>
+            <button id="confirm-matchup" class="confirm-button" type="button">🔔 ¡A PELEAR!</button>
+          </div>
+          <div id="choose-panel" class="phase-panel">
+            <div id="choose-title" class="choose-title"></div>
+            <div id="attacks" class="attacks"></div>
+            <div class="choose-actions">
+              <button id="power-mode" class="power-mode" type="button" aria-pressed="false">💥 GOLPE FUERTE: NO</button>
+              <button id="attack-button" class="attack-go" type="button">ELIGE UN ATAQUE</button>
+            </div>
+            <div class="power-help">Golpe fuerte: más daño por 30 de poder. Con más poder también recibes menos daño.</div>
+          </div>
+          <div id="result-panel" class="phase-panel">
+            <div class="result-box">
+              <div id="result-icon" class="result-icon"></div>
+              <div id="message" aria-live="polite"></div>
+            </div>
+            <button id="next-button" type="button" class="secondary">SIGUIENTE ▶</button>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="winner-screen" class="screen">
       <div class="panel">
         <div class="fighter-icon">🏆</div>
+        <img id="winner-image" class="winner-image" alt="">
         <h2 id="winner"></h2>
         <button id="again-button">JUGAR OTRA VEZ</button>
       </div>
     </section>
   </main>
 
-  <div id="free-modal" class="modal">
+  <div id="free-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="free-title">
     <div class="panel">
-      <h2>ATAQUE LIBRE</h2>
-      <label for="free-attack">Escribe tu ataque:</label>
-      <input id="free-attack" maxlength="40" autocomplete="off" placeholder="Super patada">
+      <h2 id="free-title">ATAQUE LIBRE</h2>
+      <label for="free-attack">Escribe o dicta tu ataque:</label>
+      <div class="input-row">
+        <input id="free-attack" maxlength="50" autocomplete="off" placeholder="Super patada">
+        <button id="emoji-toggle" class="tool-button" type="button" aria-expanded="false" aria-controls="emoji-keyboard" aria-label="Teclado de emojis">😀</button>
+        <button id="dictate-button" class="tool-button" type="button" aria-label="Dictar el nombre con el micrófono">🎤</button>
+      </div>
+      <div id="emoji-keyboard" class="emoji-keyboard" hidden></div>
+      <div id="record-row" class="record-row">
+        <button id="record-button" type="button">🔴 GRABAR GRITO</button>
+        <button id="play-recording" type="button" class="secondary">▶ ESCUCHAR</button>
+        <button id="delete-recording" type="button" class="secondary" aria-label="Borrar grabación">🗑️</button>
+      </div>
+      <div id="voice-status" class="voice-status" aria-live="polite"></div>
+      <div class="field-label" id="icon-label">Elige su icono:</div>
+      <div id="icon-picker" class="icon-picker" role="radiogroup" aria-labelledby="icon-label"></div>
+      <div class="free-preview" aria-hidden="true">
+        <div class="attack-btn custom">
+          <span id="free-preview-icon" class="attack-art"></span>
+          <span id="free-preview-name" class="attack-name"></span>
+        </div>
+      </div>
       <div class="choice-row">
-        <button id="free-confirm">ATACAR</button>
-        <button id="free-cancel" type="button">CANCELAR</button>
+        <button id="free-confirm" type="button">AÑADIR A LA LISTA</button>
+        <button id="free-cancel" type="button" class="secondary">CANCELAR</button>
       </div>
     </div>
   </div>
 
   <div id="fall-celebration" class="fall-celebration" aria-live="assertive">
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="confetti"></div>
-    <div class="celebration-message">🏆 ¡CAÍDA!<span id="fall-winner"></span></div>
+    <div class="rays"></div>
+    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
+    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
+    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
+    <div class="confetti"></div><div class="confetti"></div>
+    <div class="celebration-content">
+      <div id="celebration-title" class="celebration-title">¡CAÍDA!</div>
+      <div class="crown">👑</div>
+      <div class="champion">
+        <img id="champion-image" alt="">
+        <div id="champion-name" class="champion-name"></div>
+        <div id="champion-falls" class="champion-falls"></div>
+      </div>
+      <div id="celebration-sub" class="celebration-sub"></div>
+      <div id="scoreboard" class="scoreboard"></div>
+      <button id="celebration-continue" class="celebration-continue" type="button"></button>
+    </div>
   </div>
 
   <script>
@@ -351,12 +633,12 @@
       rudo: {
         name: "El Enmascarado de Terciopelo",
         type: "RUDO",
-        image: "assets/enmascarado-de-terciopelo.png"
+        image: "assets/enmascarado-de-terciopelo.svg"
       },
       tecnico: {
         name: "Golden Fire",
         type: "TÉCNICO",
-        image: "assets/golden-fire.png"
+        image: "assets/golden-fire.svg"
       },
       exterminador: {
         name: "El Exterminador",
@@ -369,6 +651,7 @@
         image: "assets/karla.svg"
       }
     };
+    const fighterKeys = Object.keys(fighters);
     const commonAttacks = [
       "Gancho al cuello", "Bola dora", "Golpe relámpago",
       "Llave de cintura", "Patada giratoria", "Derribo rápido"
@@ -391,74 +674,288 @@
       "Castigo al brazo": "🦾",
       "Tirar del ring": "🤼"
     };
+    const freeIcons = [
+      "👊", "🦶", "💥", "🔥", "⚡", "🌪️", "🌊", "❄️", "☄️", "🌋", "💣", "🔨",
+      "🐍", "🦈", "🐉", "🦍", "🐻", "🦂", "🦖", "🐯", "💀", "👑", "🚀", "✨"
+    ];
+    const MIN_STRONG_POWER = 30;
+
     let players = [];
     let current = 0;
+    let phase = "intro";
     let locked = false;
     let customAttacks = [];
+    let currentAttacks = [];
+    let selectedAttack = null;
     let strongAttack = false;
     let selectedTarget = null;
     let extraTurnPending = false;
     let isExtraTurn = false;
-    let lastSpokenAttack = "";
-    let lastSpokenAt = 0;
+    let pendingOutcome = null;
+    let flowToken = 0;
+    let setupChoices = [];
+    let freeIcon = freeIcons[0];
+    let celebrationAction = null;
     const playerSetupStorageKey = count => `lucha-player-setup-${count}`;
 
     const $ = (selector) => document.querySelector(selector);
+    const pick = (options) => options[Math.floor(Math.random() * options.length)];
     const show = (id) => {
       document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
       $("#" + id).classList.add("active");
     };
 
-    $("#start-button").addEventListener("click", () => show("count-screen"));
+    /* ---------- Narrador ---------- */
+    const speech = { muted: false, voice: null };
+    let lastSpokenText = "";
+    let lastSpokenAt = 0;
+    try { speech.muted = localStorage.getItem("lucha-muted") === "1"; } catch (error) { /* sin almacenamiento */ }
+
+    function canSpeak() {
+      return "speechSynthesis" in window && !speech.muted;
+    }
+
+    // Prefiere las voces "naturales"/neuronales en español, que suenan mucho menos a robot.
+    function chooseVoice() {
+      const score = voice => {
+        const name = voice.name.toLowerCase();
+        let points = 0;
+        if (/natural|neural|online|premium|enhanced|mejorada/.test(name)) points += 10;
+        if (/google/.test(name)) points += 6;
+        if (!voice.localService) points += 3;
+        if (/^es-(es|mx|us|ar|co)/i.test(voice.lang)) points += 2;
+        if (/espeak|compact/.test(name)) points -= 10;
+        return points;
+      };
+      const voices = window.speechSynthesis.getVoices()
+        .filter(voice => voice.lang.toLowerCase().startsWith("es"))
+        .sort((a, b) => score(b) - score(a));
+      speech.voice = voices[0] || null;
+    }
+    if ("speechSynthesis" in window) {
+      chooseVoice();
+      window.speechSynthesis.onvoiceschanged = chooseVoice;
+    }
+
+    function makeUtterance(text) {
+      const excited = text.includes("!");
+      // Los emojis de los ataques libres no se leen en voz alta.
+      const utterance = new SpeechSynthesisUtterance(text.replace(/[\p{Extended_Pictographic}️]/gu, ""));
+      utterance.lang = speech.voice ? speech.voice.lang : "es-ES";
+      if (speech.voice) utterance.voice = speech.voice;
+      // El comentarista acelera y sube el tono cuando grita.
+      utterance.rate = excited ? 1.15 : 1.04;
+      utterance.pitch = excited ? 1.2 : 1;
+      return utterance;
+    }
+
+    let activeClip = null;
+
+    function stopNarration() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (activeClip) {
+        activeClip.pause();
+        activeClip = null;
+      }
+    }
+
+    // Reproduce un grito grabado; resuelve cuando termina.
+    function playClip(url, force = false) {
+      stopNarration();
+      return new Promise(resolve => {
+        if (!url || (speech.muted && !force)) {
+          resolve();
+          return;
+        }
+        const audio = new Audio(url);
+        activeClip = audio;
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(fallback);
+          if (activeClip === audio) activeClip = null;
+          resolve();
+        };
+        const fallback = setTimeout(finish, 7000);
+        audio.onended = finish;
+        audio.onerror = finish;
+        audio.onpause = finish;
+        audio.play().catch(finish);
+      });
+    }
+
+    function say(text) {
+      if (!canSpeak()) return;
+      const now = Date.now();
+      if (text === lastSpokenText && now - lastSpokenAt < 500) return;
+      lastSpokenText = text;
+      lastSpokenAt = now;
+      stopNarration();
+      window.speechSynthesis.speak(makeUtterance(text));
+    }
+
+    // Narra frase a frase y resuelve al terminar (o tras un tiempo de lectura si no hay voz).
+    function narrate(text) {
+      const lines = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+      const readingTime = Math.min(9000, Math.max(1800, text.length * 65));
+      return new Promise(resolve => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(fallback);
+          resolve();
+        };
+        const fallback = setTimeout(finish, canSpeak() ? readingTime * 2.5 + 2000 : readingTime);
+        if (!canSpeak()) return;
+        stopNarration();
+        lines.forEach((line, i) => {
+          const utterance = makeUtterance(line);
+          if (i === lines.length - 1) {
+            utterance.onend = finish;
+            utterance.onerror = finish;
+          }
+          window.speechSynthesis.speak(utterance);
+        });
+      });
+    }
+
+    // Los botones deshabilitados o bloqueados no suenan.
+    function soundOnHover(button, play) {
+      const sound = () => {
+        if (button.disabled || locked) return;
+        play();
+      };
+      button.addEventListener("mouseenter", sound);
+      button.addEventListener("focus", sound);
+    }
+    function speakOnHover(button, getText) {
+      soundOnHover(button, () => say(getText()));
+    }
+
+    function renderMuteButton() {
+      $("#mute-button").textContent = speech.muted ? "🔇" : "🔊";
+      $("#mute-button").setAttribute("aria-label", speech.muted ? "Activar sonido" : "Silenciar sonido");
+    }
+    $("#mute-button").addEventListener("click", () => {
+      speech.muted = !speech.muted;
+      if (speech.muted) stopNarration();
+      try { localStorage.setItem("lucha-muted", speech.muted ? "1" : "0"); } catch (error) { /* sin almacenamiento */ }
+      renderMuteButton();
+    });
+    renderMuteButton();
+
+    /* ---------- Inicio y elección de luchadores ---------- */
+    $("#start-button").addEventListener("click", () => {
+      show("count-screen");
+      // Se pide el micrófono aquí, una sola vez, para no preguntar en cada grabación.
+      ensureMic().catch(() => { /* sin permiso: la grabación lo volverá a pedir */ });
+    });
     document.querySelectorAll("[data-count]").forEach(button => {
       button.addEventListener("click", () => buildSetup(Number(button.dataset.count)));
     });
     $("#again-button").addEventListener("click", resetGame);
 
     function buildSetup(count) {
-      $("#setup-grid").innerHTML = Array.from({ length: count }, (_, i) => `
-        <div class="player-form">
+      const saved = loadPlayerSetup(count);
+      setupChoices = Array.from({ length: count }, (_, i) => saved[i] || fighterKeys[i % fighterKeys.length]);
+      $("#setup-grid").innerHTML = setupChoices.map((_, i) => `
+        <div class="picker" data-picker="${i}">
           <h3>JUGADOR ${i + 1}</h3>
-          <label for="name-${i}">Nombre</label>
-          <input id="name-${i}" name="name-${i}" maxlength="20" required placeholder="Jugador ${i + 1}">
-          <label for="fighter-${i}">Luchador</label>
-          <select id="fighter-${i}" name="fighter-${i}">
-            <option value="rudo">🤼 El Enmascarado de Terciopelo — Rudo</option>
-            <option value="tecnico">🔥 Golden Fire — Técnico</option>
-            <option value="exterminador">💀 El Exterminador — Rudo</option>
-            <option value="karla">⚡ Karla — Técnica</option>
-          </select>
+          <div class="picker-main">
+            <button type="button" class="arrow" data-step="-1" aria-label="Luchador anterior para el jugador ${i + 1}">‹</button>
+            <figure class="picker-preview">
+              <img alt="">
+              <figcaption><strong class="picker-name"></strong><span class="picker-type"></span></figcaption>
+            </figure>
+            <button type="button" class="arrow" data-step="1" aria-label="Luchador siguiente para el jugador ${i + 1}">›</button>
+          </div>
+          <div class="thumbs" role="radiogroup" aria-label="Luchadores del jugador ${i + 1}">
+            ${fighterKeys.map(key => `
+              <button type="button" class="thumb" role="radio" data-fighter="${key}" aria-label="${fighters[key].name}">
+                <img src="${fighters[key].image}" alt="">
+              </button>
+            `).join("")}
+          </div>
         </div>
       `).join("");
-      const savedPlayers = loadPlayerSetup(count);
-      savedPlayers.forEach((player, i) => {
-        $(`#name-${i}`).value = player.name;
-        $(`#fighter-${i}`).value = player.fighter;
+      document.querySelectorAll(".picker").forEach(picker => {
+        const i = Number(picker.dataset.picker);
+        picker.querySelectorAll("[data-step]").forEach(button => {
+          button.addEventListener("click", () => stepFighter(i, Number(button.dataset.step)));
+        });
+        picker.querySelectorAll("[data-fighter]").forEach(button => {
+          button.addEventListener("click", () => chooseFighter(i, button.dataset.fighter));
+        });
+        picker.addEventListener("keydown", event => {
+          if (event.key === "ArrowLeft") { event.preventDefault(); stepFighter(i, -1); }
+          if (event.key === "ArrowRight") { event.preventDefault(); stepFighter(i, 1); }
+        });
+        renderPicker(i, false);
       });
       show("setup-screen");
-      $("#name-0").focus();
+      document.querySelector(".picker [data-step='1']").focus();
+    }
+
+    function stepFighter(i, step) {
+      const index = fighterKeys.indexOf(setupChoices[i]);
+      chooseFighter(i, fighterKeys[(index + step + fighterKeys.length) % fighterKeys.length]);
+    }
+
+    function chooseFighter(i, key) {
+      setupChoices[i] = key;
+      renderPicker(i, true);
+      say(`¡${fighters[key].name}!`);
+    }
+
+    function renderPicker(i, animate) {
+      const picker = document.querySelector(`[data-picker="${i}"]`);
+      const info = fighters[setupChoices[i]];
+      const image = picker.querySelector(".picker-preview img");
+      image.src = info.image;
+      image.alt = info.name;
+      if (animate) {
+        image.classList.remove("swap");
+        void image.offsetWidth;
+        image.classList.add("swap");
+      }
+      picker.querySelector(".picker-name").textContent = info.name;
+      picker.querySelector(".picker-type").textContent = info.type;
+      picker.querySelectorAll("[data-fighter]").forEach(button => {
+        button.setAttribute("aria-checked", String(button.dataset.fighter === setupChoices[i]));
+      });
     }
 
     $("#setup-form").addEventListener("submit", event => {
       event.preventDefault();
-      players = [...document.querySelectorAll(".player-form")].map((form, i) => ({
-        name: form.querySelector("input").value.trim() || `Jugador ${i + 1}`,
-        fighter: form.querySelector("select").value,
-        hp: 100,
-        power: 100,
-        falls: 0
-      }));
+      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0 }));
+      players.forEach((player, i) => {
+        player.label = displayName(i);
+        player.spoken = spokenName(i);
+      });
       savePlayerSetup(players);
       current = 0;
-      locked = false;
       customAttacks = [];
-      strongAttack = false;
-      selectedTarget = null;
       extraTurnPending = false;
       isExtraTurn = false;
+      buildCards();
       show("game-screen");
-      renderGame();
+      beginTurn("start");
     });
+
+    // Si dos jugadores eligen el mismo luchador, se les distingue por su número.
+    function isDuplicate(i) {
+      return players.filter(player => player.fighter === players[i].fighter).length > 1;
+    }
+    function displayName(i) {
+      const name = fighters[players[i].fighter].name;
+      return isDuplicate(i) ? `${name} (J${i + 1})` : name;
+    }
+    function spokenName(i) {
+      const name = fighters[players[i].fighter].name;
+      return isDuplicate(i) ? `${name}, jugador ${i + 1},` : name;
+    }
 
     function loadPlayerSetup(count) {
       try {
@@ -466,16 +963,12 @@
         if (!storedSetup) return [];
         const savedPlayers = JSON.parse(storedSetup);
         if (!Array.isArray(savedPlayers) || savedPlayers.length !== count) return [];
-        const isValid = savedPlayers.every(player =>
-          typeof player.name === "string" &&
-          typeof player.fighter === "string" &&
-          Object.hasOwn(fighters, player.fighter)
-        );
-        if (!isValid) {
+        const choices = savedPlayers.map(player => player && player.fighter);
+        if (!choices.every(key => typeof key === "string" && Object.hasOwn(fighters, key))) {
           console.warn("La configuración guardada de jugadores no es válida.");
           return [];
         }
-        return savedPlayers;
+        return choices;
       } catch (error) {
         console.error("No se pudo leer la configuración guardada de jugadores.", error);
         return [];
@@ -483,7 +976,7 @@
     }
 
     function savePlayerSetup(currentPlayers) {
-      const setup = currentPlayers.map(({ name, fighter }) => ({ name, fighter }));
+      const setup = currentPlayers.map(({ fighter }) => ({ fighter }));
       try {
         localStorage.setItem(playerSetupStorageKey(currentPlayers.length), JSON.stringify(setup));
       } catch (error) {
@@ -491,179 +984,412 @@
       }
     }
 
-    function renderGame() {
-      $("#fighters").innerHTML = players.map((player, i) => {
+    /* ---------- Tarjetas de luchadores ---------- */
+    // Las tarjetas se crean una vez por partida para que las transiciones de tamaño se animen.
+    function buildCards() {
+      $("#fighters").innerHTML = '<div class="vs" aria-hidden="true">VS</div>' + players.map((player, i) => {
         const info = fighters[player.fighter];
-        const isCurrent = i === current;
-        const isTarget = i === selectedTarget;
+        const specials = specialAttacks[player.fighter].map(name => `${attackArt[name]} ${name}`).join(" · ");
         return `
-          <article class="fighter-card ${isCurrent ? "current" : "target-option"} ${isTarget ? "selected-target" : ""}"
-            data-player="${i}" ${isCurrent ? "" : 'role="button" tabindex="0"'}>
-            ${isCurrent ? '<div class="turn-badge">▶ TU TURNO</div>' : ""}
-            ${isTarget ? '<div class="target-badge">🎯 OBJETIVO</div>' : ""}
-            <img class="fighter-image" src="${info.image}" alt="${info.name}">
-            <h3>${escapeHtml(player.name)}</h3>
-            <p>${info.name}</p>
-            <p><strong>${info.type}</strong></p>
-            <div class="falls" aria-label="${player.falls} caídas ganadas">CAÍDAS: ${"●".repeat(player.falls)}${"○".repeat(2 - player.falls)}</div>
-            <div class="hp-shell"><div class="hp-bar" style="width:${player.hp}%"></div></div>
-            <div class="hp-text">${player.hp} HP</div>
-            <div class="power-shell"><div class="power-bar" style="width:${player.power}%"></div></div>
-            <div class="power-text">${player.power} PODER · ${Math.round(player.power * 0.4)}% DEFENSA</div>
+          <article class="fighter-card" data-player="${i}">
+            <div class="card-badge"></div>
+            <div class="card-art">
+              <img class="fighter-image" src="${info.image}" alt="${info.name}">
+              <div class="card-stamp"></div>
+              <div class="damage-pop"></div>
+            </div>
+            <h3>${escapeHtml(player.label)}</h3>
+            <div class="card-details">
+              <p><strong>${info.type}</strong> · JUGADOR ${i + 1}</p>
+              <p class="specials">${specials}</p>
+            </div>
+            <div class="falls"></div>
+            <div class="hp-shell"><div class="hp-bar"></div></div>
+            <div class="hp-text"></div>
+            <div class="power-shell"><div class="power-bar"></div></div>
+            <div class="power-text"></div>
           </article>
         `;
       }).join("");
-
-      const completedFalls = players.reduce((total, player) => total + player.falls, 0);
-      $("#fall-number").textContent = `CAÍDA ${completedFalls + 1} DE 3 · GANA QUIEN CONSIGA 2`;
-      $("#turn").textContent = `▶ TURNO DE ${players[current].name.toUpperCase()}${isExtraTurn ? " · ¡TURNO EXTRA!" : ""}`;
-      document.querySelectorAll(".target-option").forEach(card => {
-        const selectCard = () => selectTarget(Number(card.dataset.player));
-        card.addEventListener("click", selectCard);
+      document.querySelectorAll(".fighter-card").forEach(card => {
+        const i = Number(card.dataset.player);
+        card.addEventListener("click", () => selectTarget(i));
         card.addEventListener("keydown", event => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            selectCard();
+            selectTarget(i);
           }
         });
       });
-      $("#target-status").textContent = selectedTarget === null
-        ? "Selecciona la carta de un contrincante para atacar."
-        : `Objetivo seleccionado: ${players[selectedTarget].name}`;
-
-      const attacks = [...commonAttacks, ...specialAttacks[players[current].fighter], ...customAttacks];
-      $("#attacks").innerHTML = attacks
-        .map((name, i) => `
-          <button data-attack-index="${i}" aria-label="${escapeHtml(name)}">
-            <span class="attack-art">${attackArt[name] || "✨"}</span>
-            <span class="attack-name">${escapeHtml(name)}</span>
-          </button>
-        `)
-        .join("") + `
-          <button class="free" id="free-button">
-            <span class="attack-art">✍️</span>
-            <span class="attack-name">ATAQUE LIBRE</span>
-          </button>
-        `;
-      document.querySelectorAll("[data-attack-index]").forEach(button => {
-        const attackName = attacks[Number(button.dataset.attackIndex)];
-        button.disabled = selectedTarget === null;
-        button.addEventListener("mouseenter", () => speakAttack(attackName));
-        button.addEventListener("focus", () => speakAttack(attackName));
-        button.addEventListener("click", () => attack(attackName));
-      });
-      $("#free-button").addEventListener("mouseenter", () => speakAttack("Ataque libre"));
-      $("#free-button").addEventListener("focus", () => speakAttack("Ataque libre"));
-      $("#free-button").addEventListener("click", openFreeAttack);
-      $("#free-button").disabled = selectedTarget === null;
-      const powerButton = $("#power-mode");
-      powerButton.classList.toggle("active", strongAttack);
-      powerButton.textContent = strongAttack ? "💥 GOLPE FUERTE: SÍ" : "💥 GOLPE FUERTE: NO";
-      powerButton.disabled = players[current].power < 30;
-      powerButton.addEventListener("click", toggleStrongAttack);
     }
 
-    function speakAttack(name) {
-      if (!("speechSynthesis" in window)) return;
-      const now = Date.now();
-      if (name === lastSpokenAttack && now - lastSpokenAt < 500) return;
-      lastSpokenAttack = name;
-      lastSpokenAt = now;
+    const cardOf = index => document.querySelector(`.fighter-card[data-player="${index}"]`);
 
-      window.speechSynthesis.cancel();
-      const announcement = new SpeechSynthesisUtterance(name);
-      announcement.lang = "es-ES";
-      const spanishVoice = window.speechSynthesis.getVoices()
-        .find(voice => voice.lang.toLowerCase().startsWith("es"));
-      if (spanishVoice) announcement.voice = spanishVoice;
-      window.speechSynthesis.speak(announcement);
+    function updateBars(index) {
+      const card = cardOf(index);
+      const player = players[index];
+      card.querySelector(".hp-bar").style.width = player.hp + "%";
+      card.querySelector(".hp-bar").classList.toggle("low", player.hp <= 30);
+      card.querySelector(".hp-text").textContent = `${player.hp} HP`;
+      card.querySelector(".power-bar").style.width = player.power + "%";
+      card.querySelector(".power-text").textContent = `${player.power} PODER · ${Math.round(player.power * 0.4)}% DEFENSA`;
+      card.querySelector(".falls").textContent = `CAÍDAS ${"●".repeat(player.falls)}${"○".repeat(Math.max(0, 2 - player.falls))}`;
+    }
+
+    function updateCards() {
+      const multi = players.length > 2;
+      document.querySelectorAll(".fighter-card").forEach(card => {
+        const i = Number(card.dataset.player);
+        const isAttacker = i === current;
+        const isDefender = i === selectedTarget;
+        const isOption = phase === "intro" && multi && !isAttacker;
+        card.classList.toggle("attacker", isAttacker);
+        card.classList.toggle("defender", isDefender);
+        card.classList.toggle("option", isOption);
+        card.classList.toggle("benched", phase !== "intro" && !isAttacker && !isDefender);
+        card.classList.toggle("compact", phase === "choose");
+        card.style.order = isAttacker ? 0 : 2 + i;
+        if (isOption) {
+          card.setAttribute("role", "button");
+          card.tabIndex = 0;
+          card.setAttribute("aria-pressed", String(isDefender));
+        } else {
+          card.removeAttribute("role");
+          card.removeAttribute("tabindex");
+          card.removeAttribute("aria-pressed");
+        }
+        card.querySelector(".card-badge").textContent = isAttacker
+          ? (isExtraTurn ? "⭐ TURNO EXTRA" : "⚔️ ATACA")
+          : isDefender ? "🎯 OBJETIVO" : isOption ? "ELEGIR" : "";
+        updateBars(i);
+      });
+    }
+
+    function clearEffects() {
+      document.querySelectorAll(".fighter-card").forEach(card => {
+        card.classList.remove("damaged", "ko", "striking", "fumbled");
+        card.querySelector(".card-stamp").classList.remove("show");
+      });
+    }
+
+    /* ---------- Fases del turno: presentación → ataque → resultado ---------- */
+    function totalFalls() {
+      return players.reduce((total, player) => total + player.falls, 0);
+    }
+
+    function updateStage() {
+      const stage = $("#stage");
+      stage.dataset.phase = phase;
+      stage.classList.toggle("multi", players.length > 2);
+      updateCards();
+      const attacker = players[current];
+      $("#fall-number").textContent = `CAÍDA ${Math.min(3, totalFalls() + 1)} DE 3 · GANA QUIEN CONSIGA 2`;
+      $("#turn-title").textContent = `▶ TURNO DE ${attacker.label.toUpperCase()}${isExtraTurn ? " · ¡TURNO EXTRA!" : ""}`;
+      const help = $("#target-help");
+      help.hidden = players.length < 3;
+      help.textContent = selectedTarget === null
+        ? "Toca la carta del luchador al que quieres atacar."
+        : `Vas a atacar a ${players[selectedTarget].label}.`;
+      $("#confirm-matchup").disabled = locked || selectedTarget === null;
+      if (phase === "choose") updateChoosePanel();
+    }
+
+    function beginTurn(kind) {
+      phase = "intro";
+      locked = false;
+      selectedAttack = null;
+      strongAttack = false;
+      pendingOutcome = null;
+      const opponents = players.map((_, i) => i).filter(i => i !== current);
+      selectedTarget = opponents.length === 1 ? opponents[0] : null;
+      clearEffects();
+      updateStage();
+      const line = introNarration(kind);
+      $("#intro-line").textContent = `🎙️ ${line}`;
+      narrate(line);
+    }
+
+    function introNarration(kind) {
+      const attacker = players[current];
+      const name = attacker.spoken;
+      const multi = players.length > 2;
+      const rival = multi ? null : players[selectedTarget].spoken;
+      let line;
+      if (kind === "start") {
+        line = multi
+          ? `¡Bienvenidos a la lucha libre! Esta noche, todos contra todos: ${listNames(players.map(p => p.spoken))}. ¡Abre el combate ${name}!`
+          : pick([
+            `¡Bienvenidos a la lucha libre! En esta esquina, ${name}. Y enfrente, ${rival}. ¡Abre el combate ${name}!`,
+            `¡Buenas noches, afición! Se enfrentan ${name} y ${rival}. ¡Empieza ${name}!`
+          ]);
+      } else if (kind === "fall") {
+        line = pick([
+          `¡Arranca la caída número ${totalFalls() + 1}! Todos recuperan fuerzas y empieza ${name}.`,
+          `¡Nueva caída, señoras y señores! ${name} sale a comerse el ring.`
+        ]);
+      } else if (isExtraTurn) {
+        line = multi
+          ? pick([`¡Turno doble! ${name} no da ni un respiro.`, `¡Otra vez ${name}! ¡Esto es un vendaval!`])
+          : pick([`¡Turno doble! ${name} no le da ni un respiro a ${rival}.`, `¡Otra vez ${name}! ¡Esto es un vendaval!`]);
+      } else {
+        const rivalHp = Math.max(...players.filter((_, i) => i !== current).map(player => player.hp));
+        const target = multi ? "sus contrincantes" : rival;
+        if (attacker.hp < rivalHp - 15) {
+          line = pick([
+            `Y ahora es el turno de ${name}, de recuperarse y machacar a ${target}.`,
+            `${name} está tocado, pero no hundido. ¡Le toca responder!`,
+            `¡Atención, que ${name} tiene que remontar! ¡Es su turno!`
+          ]);
+        } else if (attacker.hp > rivalHp + 15) {
+          line = pick([
+            `¡Turno de ${name}! Va por delante y quiere rematar a ${target}.`,
+            multi ? `${name} huele la victoria. ¿Podrán resistir sus rivales?` : `${name} huele la victoria. ¿Podrá ${rival} resistir?`
+          ]);
+        } else {
+          line = pick([
+            `Turno de ${name}. ¡Qué pelea tan igualada, señoras y señores!`,
+            `Le toca a ${name}. ¡El público está de pie!`,
+            `Y ahora es el turno de ${name}. ¡A ver qué nos tiene preparado!`
+          ]);
+        }
+      }
+      if (multi) line += " ¿A quién atacará?";
+      return line;
+    }
+
+    function listNames(names) {
+      return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
     }
 
     function selectTarget(index) {
-      if (locked || index === current) return;
+      if (phase !== "intro" || locked || index === current || players.length < 3) return;
       selectedTarget = index;
-      renderGame();
+      updateStage();
+      say(`¡Contra ${players[index].spoken}!`);
     }
 
-    function attack(name) {
-      if (locked || selectedTarget === null) return;
+    $("#confirm-matchup").addEventListener("click", () => {
+      if (phase !== "intro" || locked || selectedTarget === null) return;
+      stopNarration();
+      phase = "choose";
+      selectedAttack = null;
+      strongAttack = false;
+      renderAttacks();
+      updateStage();
+    });
+
+    function attackList() {
+      const fighter = players[current].fighter;
+      return [
+        ...commonAttacks.map(name => ({ name, icon: attackArt[name], kind: "common" })),
+        ...specialAttacks[fighter].map(name => ({ name, icon: attackArt[name], kind: "special" })),
+        ...customAttacks.map(attack => ({ ...attack, kind: "custom" }))
+      ];
+    }
+
+    function renderAttacks(newAttackName = null) {
+      currentAttacks = attackList();
+      $("#attacks").innerHTML = currentAttacks.map((attack, i) => `
+        <button type="button" class="attack-btn ${attack.kind} ${attack.name === newAttackName ? "new" : ""}"
+          data-attack-index="${i}" aria-pressed="false">
+          <span class="attack-art">${attack.icon}</span>
+          <span class="attack-name">${escapeHtml(attack.name)}${attack.sound ? " 🔊" : ""}</span>
+        </button>
+      `).join("") + `
+        <button type="button" class="attack-btn free" id="free-button">
+          <span class="attack-art">✍️</span>
+          <span class="attack-name">+ ATAQUE LIBRE</span>
+        </button>
+      `;
+      document.querySelectorAll("[data-attack-index]").forEach(button => {
+        const attack = currentAttacks[Number(button.dataset.attackIndex)];
+        soundOnHover(button, () => attack.sound ? playClip(attack.sound) : say(attack.name));
+        button.addEventListener("click", () => selectAttack(attack.name));
+      });
+      speakOnHover($("#free-button"), () => "Ataque libre");
+      $("#free-button").addEventListener("click", openFreeAttack);
+    }
+
+    function selectAttack(name) {
+      if (phase !== "choose" || locked) return;
+      selectedAttack = name;
+      updateChoosePanel();
+    }
+
+    function updateChoosePanel() {
+      const attacker = players[current];
+      $("#choose-title").textContent = `${attacker.label} ⚔ ${players[selectedTarget].label}`;
+      document.querySelectorAll("[data-attack-index]").forEach(button => {
+        const attack = currentAttacks[Number(button.dataset.attackIndex)];
+        button.setAttribute("aria-pressed", String(attack.name === selectedAttack));
+        button.disabled = locked;
+      });
+      $("#free-button").disabled = locked;
+      const canPower = attacker.power >= MIN_STRONG_POWER;
+      if (!canPower) strongAttack = false;
+      const powerButton = $("#power-mode");
+      powerButton.disabled = locked || !canPower;
+      powerButton.classList.toggle("active", strongAttack);
+      powerButton.setAttribute("aria-pressed", String(strongAttack));
+      powerButton.textContent = strongAttack ? "💥 GOLPE FUERTE: SÍ" : "💥 GOLPE FUERTE: NO";
+      const attack = currentAttacks.find(item => item.name === selectedAttack);
+      const attackButton = $("#attack-button");
+      attackButton.disabled = locked || !attack;
+      attackButton.textContent = attack ? `¡ATACAR! ${attack.icon} ${attack.name.toUpperCase()}` : "ELIGE UN ATAQUE";
+    }
+
+    speakOnHover($("#power-mode"), () => "Golpe fuerte");
+    $("#power-mode").addEventListener("click", () => {
+      if (phase !== "choose" || locked || players[current].power < MIN_STRONG_POWER) return;
+      strongAttack = !strongAttack;
+      updateChoosePanel();
+    });
+    $("#attack-button").addEventListener("click", performAttack);
+
+    function performAttack() {
+      const attack = currentAttacks.find(item => item.name === selectedAttack);
+      if (phase !== "choose" || locked || !attack) return;
       locked = true;
       const attacker = players[current];
-      const targetIndex = selectedTarget;
-      const defender = players[targetIndex];
-      const isStrong = strongAttack && attacker.power >= 30;
+      const defender = players[selectedTarget];
+      const isStrong = strongAttack && attacker.power >= MIN_STRONG_POWER;
+      const outcome = {
+        attacker: current,
+        defender: selectedTarget,
+        attack,
+        isStrong,
+        invalid: Math.random() < 0.18,
+        damage: 0,
+        blocked: 0,
+        newHp: defender.hp,
+        ko: false,
+        extra: false,
+        applied: false,
+        finished: false
+      };
+      if (!outcome.invalid) {
+        const rawDamage = Math.floor(Math.random() * 21) + 35 + (isStrong ? 20 : 0);
+        outcome.damage = Math.round(rawDamage * (1 - defender.power * 0.004));
+        outcome.blocked = rawDamage - outcome.damage;
+        outcome.newHp = Math.max(0, defender.hp - outcome.damage);
+        outcome.ko = outcome.newHp === 0;
+        outcome.extra = !outcome.ko && !isExtraTurn && Math.random() < 0.2;
+      }
+      pendingOutcome = outcome;
       strongAttack = false;
-      if (isStrong) {
-        attacker.power -= 30;
-        updatePower(current);
-      }
-      if (Math.random() < 0.18) {
-        $("#message").innerHTML = `¡El ataque <strong>${escapeHtml(name)}</strong> de ${escapeHtml(attacker.name)} fue <strong>INVALIDADO</strong>!<br>` +
-          `${isStrong ? "El golpe fuerte consumió 30 de poder. " : ""}El turno pasa al siguiente jugador.`;
-        setTimeout(nextTurn, 900);
-        return;
-      }
 
-      const rawDamage = Math.floor(Math.random() * 21) + 35 + (isStrong ? 20 : 0);
-      const defense = defender.power * 0.004;
-      const damage = Math.round(rawDamage * (1 - defense));
-      const blockedDamage = rawDamage - damage;
-      defender.hp = Math.max(0, defender.hp - damage);
+      // Las tarjetas vuelven a su tamaño y, cuando han crecido, llega el golpe.
+      phase = "result";
+      $("#message").innerHTML = "";
+      $("#result-icon").textContent = attack.icon;
+      $("#next-button").disabled = true;
+      updateStage();
+      const token = ++flowToken;
+      setTimeout(() => {
+        if (token !== flowToken) return;
+        applyOutcome(outcome);
+        playHitEffects(outcome);
+        $("#message").innerHTML = resultHtml(outcome);
+        $("#next-button").disabled = false;
+        // Si el ataque libre tiene grito grabado, suena antes que el comentarista.
+        playClip(outcome.attack.sound).then(() => {
+          if (token === flowToken) return narrate(resultNarration(outcome));
+        }).then(() => {
+          if (token !== flowToken) return;
+          setTimeout(() => { if (token === flowToken) finishResult(); }, outcome.ko ? 500 : 1000);
+        });
+      }, 480);
+    }
 
-      $("#message").innerHTML = `<strong>${escapeHtml(attacker.name)}</strong> utiliza ${isStrong ? "un GOLPE FUERTE con " : ""}<strong>${escapeHtml(name)}</strong>.<br>` +
-        `${escapeHtml(defender.name)} bloquea ${blockedDamage} y recibe ${damage} de daño.${defender.hp === 0 ? " ¡CAÍDA!" : ""}`;
-      updateHealth(targetIndex);
-      const targetCard = document.querySelector(`[data-player="${targetIndex}"]`);
-      targetCard.classList.add("hit");
-      setTimeout(() => targetCard.classList.remove("hit"), 400);
-
-      if (defender.hp === 0) {
+    function applyOutcome(outcome) {
+      if (outcome.applied) return;
+      outcome.applied = true;
+      const attacker = players[outcome.attacker];
+      if (outcome.isStrong) attacker.power -= MIN_STRONG_POWER;
+      players[outcome.defender].hp = outcome.newHp;
+      if (outcome.ko) {
         attacker.falls++;
         extraTurnPending = false;
-        celebrateFall(attacker);
-        if (attacker.falls === 2) {
-          setTimeout(() => endGame(attacker), 1800);
-          return;
-        }
-        const nextPlayer = (current + 1) % players.length;
-        setTimeout(() => startNextFall(nextPlayer, attacker), 1800);
+      } else if (outcome.extra) {
+        extraTurnPending = true;
+      }
+      updateBars(outcome.attacker);
+      updateBars(outcome.defender);
+    }
+
+    function playHitEffects(outcome) {
+      const attackerCard = cardOf(outcome.attacker);
+      const defenderCard = cardOf(outcome.defender);
+      if (outcome.invalid) {
+        attackerCard.classList.add("fumbled");
+        const stamp = attackerCard.querySelector(".card-stamp");
+        stamp.textContent = "NULO";
+        stamp.classList.add("show");
         return;
       }
-
-      if (!isExtraTurn && Math.random() < 0.2) {
-        extraTurnPending = true;
-        $("#message").innerHTML += `<br><strong>¡${escapeHtml(attacker.name)} consigue un TURNO DOBLE!</strong>`;
+      attackerCard.classList.add("striking");
+      defenderCard.querySelector(".damage-pop").textContent = `-${outcome.damage}`;
+      defenderCard.classList.add("damaged");
+      if (outcome.ko) {
+        defenderCard.classList.add("ko");
+        const stamp = defenderCard.querySelector(".card-stamp");
+        stamp.textContent = "K.O.";
+        stamp.classList.add("show");
       }
-      setTimeout(nextTurn, 900);
     }
 
-    function celebrateFall(scorer) {
-      $("#fall-winner").textContent = `${scorer.name.toUpperCase()} GANA LA CAÍDA`;
-      $("#fall-celebration").classList.add("open");
+    function resultHtml(outcome) {
+      const attacker = escapeHtml(players[outcome.attacker].label);
+      const defender = escapeHtml(players[outcome.defender].label);
+      const attack = escapeHtml(outcome.attack.name);
+      const lines = [`<strong>${attacker}</strong> utiliza ${outcome.isStrong ? "un <strong>GOLPE FUERTE</strong> con " : ""}<strong>${attack}</strong>.`];
+      if (outcome.invalid) {
+        lines.push(`🚫 ¡El árbitro <strong>INVALIDA</strong> el ataque!${outcome.isStrong ? " El golpe fuerte gastó 30 de poder." : ""}`);
+        return lines.join("<br>");
+      }
+      lines.push(`${defender} bloquea ${outcome.blocked} y recibe <strong>${outcome.damage}</strong> de daño.`);
+      if (outcome.ko) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
+      if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
+      return lines.join("<br>");
     }
 
-    function updateHealth(index) {
-      const card = document.querySelector(`[data-player="${index}"]`);
-      card.querySelector(".hp-bar").style.width = players[index].hp + "%";
-      card.querySelector(".hp-text").textContent = `${players[index].hp} HP`;
+    function resultNarration(outcome) {
+      const attacker = players[outcome.attacker].spoken;
+      const defender = players[outcome.defender].spoken;
+      const attack = outcome.attack.name;
+      const parts = [pick([
+        `¡${attacker} lanza ${attack}!`,
+        `¡Ahí va ${attacker} con ${attack}!`,
+        `¡Atención! ¡${attack} de ${attacker}!`
+      ])];
+      if (outcome.isStrong) parts.push(pick(["¡Y es un golpe fuerte, con toda el alma!", "¡Golpe fuerte! ¡Saca toda la artillería!"]));
+      if (outcome.invalid) {
+        parts.push(pick(["¡Pero no! ¡El árbitro lo invalida! ¡Qué polémica!", `¡El árbitro dice que no! ¡${attack} no vale!`]));
+        return parts.join(" ");
+      }
+      if (outcome.ko) {
+        parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos! ¡Tres!`);
+        return parts.join(" ");
+      }
+      if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
+      else if (outcome.damage >= 30) parts.push(`¡Le entra de lleno! ${outcome.damage} de daño.`);
+      else parts.push(`${defender} se cubre bien y solo recibe ${outcome.damage}.`);
+      if (outcome.newHp <= 30) parts.push(`¡${defender} está contra las cuerdas!`);
+      if (outcome.extra) parts.push(`¡Y atención, que ${attacker} tiene turno doble!`);
+      return parts.join(" ");
     }
 
-    function updatePower(index) {
-      const card = document.querySelector(`[data-player="${index}"]`);
-      card.querySelector(".power-bar").style.width = players[index].power + "%";
-      card.querySelector(".power-text").textContent =
-        `${players[index].power} PODER · ${Math.round(players[index].power * 0.4)}% DEFENSA`;
-    }
-
-    function toggleStrongAttack() {
-      if (locked || players[current].power < 30) return;
-      strongAttack = !strongAttack;
-      const button = $("#power-mode");
-      button.classList.toggle("active", strongAttack);
-      button.textContent = strongAttack ? "💥 GOLPE FUERTE: SÍ" : "💥 GOLPE FUERTE: NO";
-    }
-
-    function nextTurn() {
+    function finishResult() {
+      const outcome = pendingOutcome;
+      if (!outcome || outcome.finished) return;
+      outcome.finished = true;
+      flowToken++;
+      stopNarration();
+      applyOutcome(outcome);
+      if (outcome.ko) {
+        showFallCelebration(outcome.attacker);
+        return;
+      }
       if (extraTurnPending) {
         extraTurnPending = false;
         isExtraTurn = true;
@@ -671,75 +1397,381 @@
         current = (current + 1) % players.length;
         isExtraTurn = false;
       }
-      selectedTarget = null;
-      strongAttack = false;
-      locked = false;
-      renderGame();
+      beginTurn("turn");
+    }
+    $("#next-button").addEventListener("click", finishResult);
+
+    /* ---------- Festejo de caída ---------- */
+    function showFallCelebration(scorerIndex) {
+      const scorer = players[scorerIndex];
+      const wonMatch = scorer.falls >= 2;
+      const overlay = $("#fall-celebration");
+      $("#celebration-title").textContent = wonMatch ? "¡VICTORIA!" : "¡CAÍDA!";
+      $("#champion-image").src = fighters[scorer.fighter].image;
+      $("#champion-image").alt = fighters[scorer.fighter].name;
+      $("#champion-name").textContent = scorer.label.toUpperCase();
+      $("#champion-falls").innerHTML = Array.from({ length: 2 }, (_, i) =>
+        i < scorer.falls ? `<span class="${i === scorer.falls - 1 ? "new" : ""}">●</span>` : "<span>○</span>"
+      ).join("");
+      $("#celebration-sub").textContent = wonMatch ? "¡GANA LA LUCHA!" : `¡SE LLEVA LA CAÍDA ${totalFalls()}!`;
+      $("#scoreboard").textContent = "MARCADOR · " + players.map(player => `${player.label} ${player.falls}`).join(" · ");
+      const button = $("#celebration-continue");
+      button.textContent = wonMatch ? "VER AL CAMPEÓN 🏆" : "SIGUIENTE CAÍDA ▶";
+      button.disabled = true;
+      button.classList.remove("ready");
+      celebrationAction = wonMatch
+        ? () => endGame(scorerIndex)
+        : () => startNextFall((scorerIndex + 1) % players.length);
+
+      overlay.classList.remove("open");
+      void overlay.offsetWidth;
+      overlay.classList.add("open");
+
+      const token = ++flowToken;
+      const others = players.filter((_, i) => i !== scorerIndex);
+      const score = players.length === 2 ? ` ¡Van ${scorer.falls} a ${others[0].falls}!` : "";
+      narrate(wonMatch
+        ? `¡Se acabó! ¡${scorer.spoken} gana la lucha! ¡Qué noche, señoras y señores!`
+        : `¡Caída para ${scorer.spoken}! ¡El público se viene abajo!${score}`);
+      // El botón tarda en aparecer para que el festejo se vea entero.
+      setTimeout(() => {
+        if (token !== flowToken) return;
+        button.disabled = false;
+        button.classList.add("ready");
+        button.focus();
+      }, 2600);
     }
 
-    function startNextFall(starterIndex, scorer) {
+    $("#celebration-continue").addEventListener("click", () => {
+      if (!celebrationAction) return;
+      const action = celebrationAction;
+      celebrationAction = null;
+      flowToken++;
+      stopNarration();
       $("#fall-celebration").classList.remove("open");
+      action();
+    });
+
+    function startNextFall(starterIndex) {
       players.forEach(player => {
         player.hp = 100;
         player.power = 100;
       });
       current = starterIndex;
-      selectedTarget = null;
       extraTurnPending = false;
       isExtraTurn = false;
-      strongAttack = false;
-      locked = false;
-      renderGame();
-      $("#message").innerHTML = `<strong>${escapeHtml(scorer.name)}</strong> gana la caída.<br>` +
-        `Todos recuperan su vida. ¡Comienza la siguiente caída!`;
+      beginTurn("fall");
+    }
+
+    /* ---------- Ataque libre ---------- */
+    const emojiGroups = [
+      ["GOLPES", ["👊", "🤛", "🤜", "✊", "💪", "🦵", "🦶", "🤼", "🥊", "🥋", "💥", "💢", "💫", "💨"]],
+      ["PODERES", ["🔥", "⚡", "🌪️", "🌊", "❄️", "☄️", "🌋", "💣", "🧨", "✨", "🌟", "💯"]],
+      ["ANIMALES", ["🐍", "🦈", "🐉", "🦍", "🐻", "🦂", "🦖", "🐯", "🦅", "🐺", "🦁", "🐗"]],
+      ["CARAS", ["😈", "👹", "💀", "🤡", "😡", "🤯", "😎", "🥵", "🤬", "👑", "🎯", "🚀"]]
+    ];
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const canRecord = Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    const MAX_RECORD_SECONDS = 4;
+    let recognition = null;
+    let recorder = null;
+    let micStream = null;
+    let recordingUrl = null;
+    let recordTimer = null;
+    let recordSecondsLeft = 0;
+
+    $("#icon-picker").innerHTML = freeIcons.map(icon => `
+      <button type="button" class="icon-choice" role="radio" data-icon="${icon}" aria-label="Icono ${icon}">${icon}</button>
+    `).join("");
+    document.querySelectorAll("[data-icon]").forEach(button => {
+      button.addEventListener("click", () => {
+        freeIcon = button.dataset.icon;
+        renderFreePreview();
+      });
+    });
+
+    $("#emoji-keyboard").innerHTML = emojiGroups.map(([title, emojis]) => `
+      <h4>${title}</h4>
+      <div class="emoji-grid">
+        ${emojis.map(emoji => `<button type="button" class="emoji-key" data-emoji="${emoji}" aria-label="Añadir ${emoji}">${emoji}</button>`).join("")}
+      </div>
+    `).join("");
+    document.querySelectorAll("[data-emoji]").forEach(button => {
+      button.addEventListener("click", () => insertEmoji(button.dataset.emoji));
+    });
+    $("#emoji-toggle").addEventListener("click", () => {
+      const keyboard = $("#emoji-keyboard");
+      keyboard.hidden = !keyboard.hidden;
+      $("#emoji-toggle").setAttribute("aria-expanded", String(!keyboard.hidden));
+    });
+
+    // Inserta en la posición del cursor sin enfocar el campo (en el móvil abriría el teclado).
+    function insertEmoji(emoji) {
+      const input = $("#free-attack");
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? start;
+      const value = input.value.slice(0, start) + emoji + input.value.slice(end);
+      if (value.length > input.maxLength) return;
+      input.value = value;
+      input.setSelectionRange(start + emoji.length, start + emoji.length);
+      renderFreePreview();
+    }
+
+    const isFreeModalOpen = () => $("#free-modal").classList.contains("open");
+    const setVoiceStatus = text => { $("#voice-status").textContent = text; };
+
+    function renderVoiceButtons() {
+      const dictate = $("#dictate-button");
+      dictate.hidden = !SpeechRecognition;
+      dictate.classList.toggle("listening", Boolean(recognition));
+      dictate.textContent = recognition ? "⏹" : "🎤";
+      dictate.setAttribute("aria-label", recognition ? "Dejar de escuchar" : "Dictar el nombre con el micrófono");
+      $("#record-row").hidden = !canRecord;
+      const record = $("#record-button");
+      record.classList.toggle("recording", Boolean(recorder));
+      record.textContent = recorder
+        ? `⏹ PARAR (${recordSecondsLeft}s)`
+        : recordingUrl ? "🔴 GRABAR OTRA VEZ" : "🔴 GRABAR GRITO";
+      $("#play-recording").disabled = !recordingUrl || Boolean(recorder);
+      $("#delete-recording").disabled = !recordingUrl || Boolean(recorder);
+    }
+
+    // Abierto desde un archivo, el navegador no recuerda el permiso del micrófono,
+    // así que el flujo se abre una vez y se mantiene vivo toda la sesión.
+    // Entre grabaciones la pista queda silenciada: no se capta nada.
+    async function ensureMic() {
+      if (!canRecord) throw new Error("Grabación no disponible");
+      const track = micStream && micStream.getAudioTracks()[0];
+      if (track && track.readyState === "live") return micStream;
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicActive(false);
+      return micStream;
+    }
+
+    function setMicActive(active) {
+      if (micStream) micStream.getAudioTracks().forEach(track => { track.enabled = active; });
+    }
+
+    function toggleDictation() {
+      if (recognition) {
+        recognition.stop();
+        return;
+      }
+      if (recorder) return;
+      stopNarration();
+      let heard = false;
+      let failed = false;
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = event => {
+        const text = [...event.results].map(result => result[0].transcript).join(" ").trim();
+        if (!text) return;
+        heard = true;
+        $("#free-attack").value = (text.charAt(0).toUpperCase() + text.slice(1)).slice(0, $("#free-attack").maxLength);
+        renderFreePreview();
+      };
+      recognition.onerror = event => {
+        failed = true;
+        setVoiceStatus(event.error === "not-allowed" || event.error === "service-not-allowed"
+          ? "No hay permiso para usar el micrófono."
+          : event.error === "no-speech" ? "No se oyó nada. Prueba otra vez." : "No se pudo escuchar. Prueba otra vez.");
+      };
+      recognition.onend = () => {
+        recognition = null;
+        if (!recorder) setMicActive(false);
+        if (heard) setVoiceStatus("✔ Escrito lo que dijiste. Puedes corregirlo.");
+        else if (!failed) setVoiceStatus("");
+        renderVoiceButtons();
+      };
+      // Los navegadores recientes aceptan la pista ya abierta y no vuelven a pedir permiso;
+      // los antiguos ignoran el argumento y usan el micrófono por defecto.
+      const track = micStream && micStream.getAudioTracks()[0];
+      const liveTrack = track && track.readyState === "live" ? track : null;
+      try {
+        setMicActive(true);
+        try {
+          if (liveTrack) recognition.start(liveTrack);
+          else recognition.start();
+        } catch (error) {
+          if (!liveTrack) throw error;
+          recognition.start();
+        }
+        setVoiceStatus("🎤 Te escucho… di el nombre del ataque.");
+      } catch (error) {
+        recognition = null;
+        setMicActive(false);
+        setVoiceStatus("No se pudo usar el micrófono.");
+      }
+      renderVoiceButtons();
+    }
+
+    async function toggleRecording() {
+      if (recorder) {
+        recorder.stop();
+        return;
+      }
+      if (recognition) recognition.stop();
+      stopNarration();
+      let stream;
+      try {
+        stream = await ensureMic();
+      } catch (error) {
+        setVoiceStatus("No hay permiso para usar el micrófono.");
+        return;
+      }
+      if (!isFreeModalOpen() || recorder) return;
+      const chunks = [];
+      setMicActive(true);
+      const activeRecorder = new MediaRecorder(stream);
+      recorder = activeRecorder;
+      activeRecorder.ondataavailable = event => {
+        if (event.data.size) chunks.push(event.data);
+      };
+      activeRecorder.onstop = () => {
+        // El flujo no se cierra: solo se silencia hasta la próxima grabación.
+        setMicActive(false);
+        clearInterval(recordTimer);
+        recorder = null;
+        if (!activeRecorder.discard && chunks.length) {
+          discardRecording();
+          recordingUrl = URL.createObjectURL(new Blob(chunks, { type: activeRecorder.mimeType || "audio/webm" }));
+          setVoiceStatus("✔ Grito grabado. Sonará cuando lances el ataque.");
+        }
+        renderVoiceButtons();
+        renderFreePreview();
+      };
+      activeRecorder.start();
+      recordSecondsLeft = MAX_RECORD_SECONDS;
+      recordTimer = setInterval(() => {
+        recordSecondsLeft--;
+        if (recordSecondsLeft <= 0 && activeRecorder.state === "recording") activeRecorder.stop();
+        else renderVoiceButtons();
+      }, 1000);
+      setVoiceStatus("🔴 Grabando… ¡grita tu ataque!");
+      renderVoiceButtons();
+    }
+
+    // Libera una grabación que no llegó a guardarse en ningún ataque.
+    function discardRecording() {
+      if (recordingUrl) URL.revokeObjectURL(recordingUrl);
+      recordingUrl = null;
+    }
+
+    function stopVoiceInput() {
+      if (recognition) recognition.abort();
+      if (recorder) {
+        recorder.discard = true;
+        recorder.stop();
+      }
+    }
+
+    $("#dictate-button").addEventListener("click", toggleDictation);
+    $("#record-button").addEventListener("click", toggleRecording);
+    $("#play-recording").addEventListener("click", () => playClip(recordingUrl, true));
+    $("#delete-recording").addEventListener("click", () => {
+      stopNarration();
+      discardRecording();
+      setVoiceStatus("Grabación borrada.");
+      renderVoiceButtons();
+      renderFreePreview();
+    });
+
+    function renderFreePreview() {
+      const name = $("#free-attack").value.trim();
+      $("#free-preview-icon").textContent = freeIcon;
+      $("#free-preview-name").textContent = (name || (recordingUrl ? "Grito" : "Tu ataque")) + (recordingUrl ? " 🔊" : "");
+      $("#free-confirm").disabled = Boolean(recorder) || (!name && !recordingUrl);
+      document.querySelectorAll("[data-icon]").forEach(button => {
+        button.setAttribute("aria-checked", String(button.dataset.icon === freeIcon));
+      });
     }
 
     function openFreeAttack() {
-      if (locked || selectedTarget === null) return;
+      if (phase !== "choose" || locked) return;
+      stopNarration();
       $("#free-modal").classList.add("open");
       $("#free-attack").value = "";
+      $("#emoji-keyboard").hidden = true;
+      $("#emoji-toggle").setAttribute("aria-expanded", "false");
+      freeIcon = freeIcons[0];
+      discardRecording();
+      setVoiceStatus("");
+      renderVoiceButtons();
+      renderFreePreview();
       $("#free-attack").focus();
     }
 
     function closeFreeAttack() {
+      stopVoiceInput();
+      stopNarration();
+      discardRecording();
       $("#free-modal").classList.remove("open");
     }
 
-    $("#free-confirm").addEventListener("click", () => {
-      const name = $("#free-attack").value.trim();
-      if (!name) {
-        $("#free-attack").focus();
-        return;
+    // Un ataque solo grabado, sin nombre escrito, se llama "Grito N".
+    function shoutName() {
+      let n = 1;
+      while (customAttacks.some(attack => attack.name === `Grito ${n}`)) n++;
+      return `Grito ${n}`;
+    }
+
+    function addFreeAttack() {
+      if ($("#free-confirm").disabled) return;
+      const name = $("#free-attack").value.trim() || shoutName();
+      let attack = customAttacks.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (attack) {
+        attack.icon = freeIcon;
+      } else {
+        attack = { name, icon: freeIcon, sound: null };
+        customAttacks.push(attack);
       }
-      if (!customAttacks.some(attackName => attackName.toLowerCase() === name.toLowerCase())) {
-        customAttacks.push(name);
+      if (recordingUrl) {
+        if (attack.sound) URL.revokeObjectURL(attack.sound);
+        attack.sound = recordingUrl;
+        recordingUrl = null; // ya pertenece al ataque, no se libera al cerrar
       }
       closeFreeAttack();
-      attack(name);
-    });
+      // El ataque solo se añade a la lista; se lanza desde allí como los demás.
+      renderAttacks(attack.name);
+      updateChoosePanel();
+    }
+
+    $("#free-attack").addEventListener("input", renderFreePreview);
+    $("#free-confirm").addEventListener("click", addFreeAttack);
     $("#free-cancel").addEventListener("click", closeFreeAttack);
-    $("#free-attack").addEventListener("keydown", event => {
-      if (event.key === "Enter") $("#free-confirm").click();
+    $("#free-modal").addEventListener("keydown", event => {
+      if (event.key === "Enter" && event.target === $("#free-attack")) addFreeAttack();
       if (event.key === "Escape") closeFreeAttack();
     });
 
-    function endGame(winner) {
-      $("#fall-celebration").classList.remove("open");
-      $("#winner").textContent = `¡${winner.name.toUpperCase()} GANA!`;
+    /* ---------- Final ---------- */
+    function endGame(winnerIndex) {
+      const winner = players[winnerIndex];
+      $("#winner-image").src = fighters[winner.fighter].image;
+      $("#winner-image").alt = fighters[winner.fighter].name;
+      $("#winner").textContent = `¡${winner.label.toUpperCase()} GANA!`;
       show("winner-screen");
+      narrate(`¡${winner.spoken} es el gran campeón de la noche!`);
     }
 
     function resetGame() {
+      flowToken++;
+      stopNarration();
       players = [];
       current = 0;
+      phase = "intro";
       locked = false;
       customAttacks = [];
+      selectedAttack = null;
       strongAttack = false;
       selectedTarget = null;
       extraTurnPending = false;
       isExtraTurn = false;
+      pendingOutcome = null;
+      celebrationAction = null;
       $("#fall-celebration").classList.remove("open");
-      $("#message").textContent = "¡Que comience la pelea!";
       show("start-screen");
     }
 

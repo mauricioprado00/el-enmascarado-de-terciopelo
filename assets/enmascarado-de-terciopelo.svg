@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" role="img" aria-labelledby="title">
+  <title id="title">El Enmascarado de Terciopelo</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2b0f3d"/>
+      <stop offset="1" stop-color="#0b6a70"/>
+    </linearGradient>
+    <radialGradient id="velvet" cx=".38" cy=".3" r=".8">
+      <stop stop-color="#3fd0c4"/>
+      <stop offset=".55" stop-color="#138a88"/>
+      <stop offset="1" stop-color="#0a4f55"/>
+    </radialGradient>
+    <linearGradient id="cape" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#7a2a9c"/>
+      <stop offset="1" stop-color="#2d0c40"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="420" fill="url(#bg)"/>
+  <g fill="#ffffff" opacity=".35">
+    <circle cx="36" cy="44" r="3"/><circle cx="282" cy="70" r="4"/><circle cx="262" cy="22" r="2"/>
+    <circle cx="48" cy="190" r="2"/><circle cx="290" cy="200" r="3"/><circle cx="20" cy="120" r="2"/>
+  </g>
+  <!-- cuerpo -->
+  <path d="M60 400Q66 238 160 226Q254 238 260 400Z" fill="url(#cape)" stroke="#0d2b33" stroke-width="8"/>
+  <path d="M77 276L30 352L66 378L114 308ZM243 276L290 352L254 378L206 308Z" fill="#138a88" stroke="#0d2b33" stroke-width="7"/>
+  <circle cx="44" cy="366" r="20" fill="#f0c49a" stroke="#0d2b33" stroke-width="6"/>
+  <circle cx="276" cy="366" r="20" fill="#f0c49a" stroke="#0d2b33" stroke-width="6"/>
+  <path d="M118 238L160 300L202 238L190 350H130Z" fill="#ff7a1a" stroke="#0d2b33" stroke-width="5"/>
+  <path d="M160 262L148 290L160 318L172 290Z" fill="#3fd0c4"/>
+  <!-- cuello -->
+  <path d="M132 206H188V236Q160 248 132 236Z" fill="#e6b183" stroke="#0d2b33" stroke-width="6"/>
+  <!-- máscara -->
+  <path d="M160 36C220 36 242 88 240 140C238 192 214 226 160 230C106 226 82 192 80 140C78 88 100 36 160 36Z" fill="url(#velvet)" stroke="#0d2b33" stroke-width="8"/>
+  <!-- boca y barbilla al descubierto -->
+  <path d="M120 180Q160 166 200 180Q200 224 160 229Q120 224 120 180Z" fill="#f0c49a" stroke="#0d2b33" stroke-width="6"/>
+  <path d="M140 206Q160 196 180 206" fill="none" stroke="#7c2638" stroke-width="6" stroke-linecap="round"/>
+  <!-- adorno de la frente -->
+  <path d="M160 46L176 86L160 112L144 86Z" fill="#ff7a1a" stroke="#0d2b33" stroke-width="5"/>
+  <!-- parches de los ojos -->
+  <path d="M92 132Q100 92 146 110L152 150Q118 164 96 150Z" fill="#ff7a1a" stroke="#0d2b33" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M228 132Q220 92 174 110L168 150Q202 164 224 150Z" fill="#ff7a1a" stroke="#0d2b33" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M108 136Q128 124 144 138Q126 148 108 136Z" fill="#ffe14a" stroke="#0d2b33" stroke-width="3"/>
+  <path d="M212 136Q192 124 176 138Q194 148 212 136Z" fill="#ffe14a" stroke="#0d2b33" stroke-width="3"/>
+  <circle cx="130" cy="137" r="5" fill="#1a0c10"/>
+  <circle cx="190" cy="137" r="5" fill="#1a0c10"/>
+  <path d="M104 122L146 130M216 122L174 130" stroke="#0d2b33" stroke-width="7" stroke-linecap="round"/>
+  <!-- brillo de terciopelo -->
+  <path d="M112 70Q130 52 152 50" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="7" stroke-linecap="round"/>
+  <text x="160" y="400" fill="#ffd230" stroke="#0d2b33" stroke-width="2" paint-order="stroke" font-family="Impact, sans-serif" font-size="30" text-anchor="middle">TERCIOPELO</text>
+</svg>
