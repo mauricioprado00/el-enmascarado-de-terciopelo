@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" role="img" aria-labelledby="title">
+  <title id="title">Karla</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#35135d"/>
+      <stop offset="1" stop-color="#087b91"/>
+    </linearGradient>
+    <linearGradient id="suit" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffd230"/>
+      <stop offset="1" stop-color="#e64b25"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="420" fill="url(#bg)"/>
+  <path d="M84 145Q80 45 160 38Q240 45 236 145L218 222H102Z" fill="#241126"/>
+  <circle cx="160" cy="137" r="70" fill="#c9784e"/>
+  <path d="M90 129Q92 48 160 47Q228 48 230 129Q190 103 160 67Q130 103 90 129Z" fill="#17101e"/>
+  <path d="M113 135Q132 124 147 138Q130 149 113 135ZM207 135Q188 124 173 138Q190 149 207 135Z" fill="#fff"/>
+  <circle cx="132" cy="136" r="6" fill="#26152f"/>
+  <circle cx="188" cy="136" r="6" fill="#26152f"/>
+  <path d="M137 177Q160 193 183 177" fill="none" stroke="#7c2638" stroke-width="6" stroke-linecap="round"/>
+  <path d="M67 397Q77 236 160 221Q243 236 253 397Z" fill="url(#suit)" stroke="#241126" stroke-width="8"/>
+  <path d="M125 230L160 284L195 230L182 344H138Z" fill="#f6f0dd"/>
+  <path d="M77 278L30 353L66 378L112 309ZM243 278L290 353L254 378L208 309Z" fill="#e64b25" stroke="#241126" stroke-width="7"/>
+  <path d="M160 281L145 316H158L149 354L181 307H166L180 281Z" fill="#ffd230" stroke="#5a2875" stroke-width="4"/>
+  <text x="160" y="398" fill="#fff" font-family="Impact, sans-serif" font-size="34" text-anchor="middle">KARLA</text>
+</svg>

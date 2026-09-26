@@ -1,0 +1,298 @@
+ESPECIFICACIÓN DEL VIDEOJUEGO: LUCHA
+
+OBJETIVO
+Crear un videojuego de lucha muy sencillo en HTML, CSS y JavaScript.
+Debe ser un prototipo que pueda hacerse rápidamente, sin gráficos complicados ni librerías externas.
+
+1. PANTALLA INICIAL
+
+Mostrar:
+- Título: "LUCHA"
+- Botón: "Empezar partida"
+
+Al empezar, preguntar:
+"¿Cuántos jugadores?"
+- 2 jugadores
+- 3 jugadores
+
+2. NOMBRES
+
+Cada jugador introduce su nombre.
+
+Los nombres pueden repetirse.
+No hay que comprobar si un nombre ya existe.
+
+Ejemplo:
+Jugador 1: Pedro
+Jugador 2: Pedro
+Esto es válido.
+
+3. LUCHADORES
+
+Hay dos tipos de luchadores:
+
+RUDOS:
+- El Enmascarado de Terciopelo
+
+TÉCNICOS:
+- Golden Fire
+
+Cada jugador debe elegir uno de los luchadores disponibles.
+
+No hacen falta imágenes profesionales.
+Se puede mostrar cada luchador mediante una tarjeta, emoji, dibujo sencillo con CSS o una imagen muy básica.
+
+4. ATAQUES
+
+Antes de realizar un ataque, el jugador elige qué ataque quiere utilizar.
+
+Ataques:
+
+- Gancho al cuello
+- Bola dora
+- La Voladora
+- La Cordobesa
+- Castigo al brazo
+- Tirar del ring
+- Golpe relámpago
+- Llave de cintura
+- Patada giratoria
+- Derribo rápido
+
+También debe existir:
+
+- ATAQUE LIBRE
+
+Con "Ataque libre", el jugador puede escribir el nombre de cualquier ataque que quiera.
+
+Algunos ataques pueden estar asociados a un tipo de luchador:
+
+RUDOS:
+- La Voladora
+- La Cordobesa
+- Castigo al brazo
+
+TÉCNICOS:
+- Tirar del ring
+
+Los demás pueden estar disponibles para todos.
+
+5. MECÁNICA DE COMBATE
+
+La pelea debe ser muy sencilla y tener una sensación parecida a un juego de lucha tipo Street Fighter.
+
+En cada turno:
+
+1. Se muestra qué jugador tiene el turno.
+2. El jugador elige su próximo ataque.
+3. Se calcula el daño.
+4. Se muestra una pequeña animación o mensaje.
+5. Se actualiza la barra de vida.
+6. Pasa el turno al siguiente jugador.
+
+No hace falta crear físicas ni animaciones complicadas.
+
+6. VIDA
+
+Cada jugador empieza con:
+
+100 puntos de vida.
+
+Cada ataque hace una cantidad de daño sencilla, por ejemplo entre 5 y 25 puntos.
+
+Mostrar una barra de vida para cada jugador.
+
+Cuando la vida llega a 0:
+- El jugador queda eliminado.
+- Ya no puede atacar.
+- La partida continúa con los jugadores restantes.
+
+7. GANADOR
+
+En una partida de 2 jugadores:
+- Gana el último jugador que quede con vida.
+
+En una partida de 3 jugadores:
+- Los jugadores continúan peleando por turnos.
+- Cuando solo quede uno con vida, ese jugador gana.
+
+Mostrar al final:
+
+"¡[NOMBRE] GANA!"
+
+Y un botón:
+
+"Jugar otra vez"
+
+8. PANTALLA DE COMBATE
+
+La pantalla debe mostrar:
+
+- Nombre de cada jugador
+- Nombre de su luchador
+- Tipo: Rudo o Técnico
+- Barra de vida
+- Imagen/dibujo sencillo del luchador
+- Jugador que tiene el turno
+- Botones de ataques
+- Botón "Ataque libre"
+- Texto indicando qué ha ocurrido
+
+Ejemplo:
+
+--------------------------------
+        PELEA
+--------------------------------
+
+PEDRO
+El Enmascarado de Terciopelo
+RUDO
+
+████████░░ 80 HP
+
+VS
+
+JUAN
+Golden Fire
+TÉCNICO
+
+██████░░░░ 60 HP
+
+Turno de PEDRO
+
+[Gancho al cuello]
+[La Voladora]
+[La Cordobesa]
+[Castigo al brazo]
+[Tirar del ring]
+[Ataque libre]
+
+"Pedro utiliza La Voladora!"
+"Juan recibe 15 de daño."
+
+9. ATAQUE LIBRE
+
+Al pulsar "Ataque libre":
+
+Mostrar un pequeño cuadro de texto:
+
+"Escribe tu ataque:"
+
+El jugador escribe, por ejemplo:
+
+"Super patada"
+
+Después pulsa:
+
+"Atacar"
+
+El juego muestra:
+
+"Pedro utiliza Super patada!"
+
+Y aplica un daño sencillo.
+
+10. DISEÑO
+
+El diseño debe ser muy sencillo.
+
+Estilo:
+- Videojuego de lucha
+- Botones grandes
+- Texto grande
+- Barras de vida claras
+- Interfaz fácil de entender
+- Compatible con ordenador y móvil
+
+No hace falta hacer dibujos profesionales.
+
+11. ESTRUCTURA DEL PROGRAMA
+
+Preferiblemente crear solamente:
+
+index.html
+
+Dentro del mismo archivo poner:
+
+<style>
+  CSS
+</style>
+
+<script>
+  JavaScript
+</script>
+
+No utilizar:
+- Backend
+- Base de datos
+- Servidor
+- Frameworks
+- Librerías externas
+
+El juego debe funcionar simplemente abriendo:
+
+index.html
+
+12. IMÁGENES
+
+No es obligatorio utilizar imágenes externas.
+
+Para hacerlo rápidamente:
+- El Enmascarado de Terciopelo puede tener una máscara representada con CSS o un emoji.
+- Golden Fire puede tener un símbolo de fuego o una figura sencilla.
+
+Si se utilizan imágenes, que sean opcionales y fáciles de sustituir.
+
+13. FLUJO COMPLETO
+
+El flujo del juego debe ser:
+
+INICIO
+↓
+"Empezar partida"
+↓
+Elegir 2 o 3 jugadores
+↓
+Introducir nombres
+↓
+Elegir luchador
+↓
+Comenzar pelea
+↓
+Jugador 1 elige ataque
+↓
+Se calcula daño
+↓
+Jugador 2/3 elige ataque
+↓
+Se calcula daño
+↓
+Continúan los turnos
+↓
+Los jugadores derrotados quedan eliminados
+↓
+Queda un solo jugador
+↓
+"Pedir ganador"
+↓
+"¡NOMBRE GANA!"
+↓
+"Jugar otra vez"
+
+14. PRIORIDAD
+
+La prioridad absoluta es que el juego FUNCIONE.
+
+No dedicar tiempo a:
+- Gráficos complejos
+- Animaciones avanzadas
+- Física
+- Efectos 3D
+- Sistemas complicados
+
+Debe ser un prototipo sencillo, divertido y jugable que pueda construirse rápidamente.
+
+ENTREGA FINAL PARA COPILOT
+
+Crear un único archivo index.html completamente funcional.
+El usuario debe poder abrirlo directamente en el navegador y jugar una partida completa de 2 o 3 jugadores desde el inicio hasta que haya un ganador.

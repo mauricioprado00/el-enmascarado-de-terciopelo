@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LUCHA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Impact, Arial, sans-serif;
+      color: #fff;
+      background: radial-gradient(circle at top, #3b124d, #120719 65%);
+      text-align: center;
+    }
+    button, input, select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 18px;
+      color: #fff;
+      background: #d9263f;
+      box-shadow: 0 4px 0 #7f1022;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    h1 { margin: 8px 0 24px; font-size: clamp(4rem, 16vw, 9rem); color: #ffd230; text-shadow: 5px 5px #d9263f; }
+    h2 { color: #ffd230; letter-spacing: 2px; }
+    .screen { display: none; min-height: 100vh; padding: 24px 14px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .panel {
+      width: min(920px, 100%);
+      padding: 24px;
+      border: 3px solid #ffd230;
+      border-radius: 18px;
+      background: rgba(12, 5, 18, .92);
+      box-shadow: 0 0 25px rgba(255, 210, 48, .24);
+    }
+    .choice-row, .setup-grid, .fighters, .attacks { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+    .choice-row button { min-width: 180px; font-size: 1.25rem; }
+    .player-form {
+      flex: 1 1 250px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #281132;
+    }
+    label { display: block; margin: 10px 0 5px; text-align: left; color: #ffd230; }
+    input, select {
+      width: 100%;
+      padding: 11px;
+      border: 2px solid #7f4a8d;
+      border-radius: 8px;
+      color: #fff;
+      background: #15091b;
+    }
+    .fighter-icon { display: block; font-size: 4rem; }
+    .fighter-image {
+      width: 100%;
+      height: 150px;
+      border-radius: 10px;
+      object-fit: cover;
+      object-position: center 22%;
+      background: #0a777d;
+    }
+    #game-screen { justify-content: flex-start; }
+    #game-screen h2 { margin: 0 0 12px; font-size: 2rem; }
+    .fighters { width: min(1100px, 100%); align-items: stretch; }
+    .fighter-card {
+      flex: 1 1 230px;
+      max-width: 340px;
+      padding: 14px;
+      border: 3px solid #755381;
+      border-radius: 14px;
+      background: #21102a;
+      transition: .2s;
+    }
+    .fighter-card.current {
+      order: -1;
+      border-color: #ffd230;
+      box-shadow: 0 0 28px #ffd230aa;
+      transform: scale(1.03);
+    }
+    .fighter-card.target-option {
+      cursor: pointer;
+      opacity: .55;
+      filter: grayscale(.65);
+    }
+    .fighter-card.target-option:hover,
+    .fighter-card.target-option:focus {
+      opacity: .85;
+      filter: none;
+      border-color: #ff8d30;
+      outline: none;
+    }
+    .fighter-card.selected-target {
+      opacity: 1;
+      filter: none;
+      border-color: #ff3b30;
+      box-shadow: 0 0 24px #ff3b30aa;
+    }
+    .turn-badge, .target-badge {
+      margin: 0 0 8px;
+      padding: 7px;
+      border-radius: 7px;
+      color: #160a05;
+      background: #ffd230;
+    }
+    .target-badge { color: #fff; background: #d9263f; }
+    .fighter-card.eliminated { filter: grayscale(1); opacity: .45; }
+    .fighter-card h3 { margin: 5px; font-size: 1.45rem; }
+    .fighter-card p { margin: 5px; font-family: Arial, sans-serif; }
+    .falls { color: #ffd230; font-size: 1.15rem; letter-spacing: 3px; }
+    .hp-shell { height: 24px; margin: 12px 0 4px; overflow: hidden; border: 3px solid #fff; background: #310a11; }
+    .hp-bar { height: 100%; background: linear-gradient(90deg, #35cf57, #bdf537); transition: width .45s; }
+    .power-shell { height: 18px; margin: 8px 0 3px; overflow: hidden; border: 2px solid #fff; background: #091d38; }
+    .power-bar { height: 100%; background: linear-gradient(90deg, #1687ff, #57e5ff); transition: width .45s; }
+    .hp-text, .power-text { font-family: Arial, sans-serif; font-size: 1rem; }
+    .arena {
+      width: min(920px, 100%);
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 14px;
+      background: #100716dd;
+    }
+    #turn { margin: 0 0 12px; color: #ffd230; font-size: clamp(1.4rem, 5vw, 2.2rem); }
+    #fall-number { margin: 0 0 8px; color: #fff; font-family: Arial, sans-serif; }
+    .target-wrap {
+      margin-bottom: 14px;
+      padding: 10px;
+      border: 2px solid #ff8d30;
+      border-radius: 9px;
+      color: #ffd230;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      background: #3b1a12;
+    }
+    .power-mode {
+      margin: 0 auto 16px;
+      background: #285a8f;
+      box-shadow: 0 4px 0 #123252;
+    }
+    .power-mode.active {
+      color: #1c0b05;
+      background: #ff9d24;
+      box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ff9d24aa;
+    }
+    .power-help {
+      margin: -7px 0 13px;
+      color: #a9dfff;
+      font: .85rem Arial, sans-serif;
+    }
+    .attacks button {
+      display: flex;
+      flex: 1 1 130px;
+      max-width: 180px;
+      min-height: 92px;
+      padding: 9px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: linear-gradient(145deg, #713a8b, #411d54);
+      box-shadow: 0 4px 0 #351443;
+    }
+    .attack-art {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 2px solid #ffd230;
+      border-radius: 50%;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+      font-size: 1.8rem;
+      line-height: 1;
+      background: radial-gradient(circle, #fff3 0 35%, #120719 70%);
+      box-shadow: 0 0 10px #ffd23066;
+    }
+    .attack-name { font-family: Arial, sans-serif; font-size: .86rem; font-weight: bold; }
+    .attacks button.free { background: #e67e00; box-shadow: 0 4px 0 #824700; }
+    #message {
+      min-height: 58px;
+      margin: 18px 0 0;
+      padding: 12px;
+      border-left: 5px solid #ffd230;
+      font-family: Arial, sans-serif;
+      font-size: 1.15rem;
+      background: #281132;
+    }
+    .hit { animation: shake .35s; }
+    @keyframes shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: #08030cd9;
+      z-index: 10;
+    }
+    .modal.open { display: grid; }
+    .modal .panel { max-width: 460px; }
+    .modal input { margin: 12px 0; }
+    .fall-celebration {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      overflow: hidden;
+      place-items: center;
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+      background: #120719dd;
+      transition: opacity .2s;
+      z-index: 20;
+    }
+    .fall-celebration.open { visibility: visible; opacity: 1; }
+    .celebration-message {
+      position: relative;
+      padding: 28px;
+      color: #ffd230;
+      font-size: clamp(2.6rem, 12vw, 6rem);
+      text-shadow: 5px 5px #d9263f;
+      transform: scale(.5) rotate(-5deg);
+      z-index: 2;
+    }
+    .fall-celebration.open .celebration-message {
+      animation: celebration-pop .55s ease-out forwards;
+    }
+    .celebration-message span {
+      display: block;
+      margin-top: 10px;
+      color: #fff;
+      font: bold clamp(1.2rem, 5vw, 2rem) Arial, sans-serif;
+      text-shadow: 2px 2px #351443;
+    }
+    .confetti {
+      position: absolute;
+      top: -12%;
+      width: 14px;
+      height: 32px;
+      background: #ffd230;
+      animation: confetti-fall 1.6s linear infinite;
+    }
+    .confetti:nth-child(2n) { background: #ff3b30; animation-delay: -.4s; }
+    .confetti:nth-child(3n) { background: #35cf57; animation-delay: -.8s; }
+    .confetti:nth-child(4n) { background: #1687ff; animation-delay: -1.2s; }
+    .confetti:nth-child(1) { left: 8%; }
+    .confetti:nth-child(2) { left: 18%; }
+    .confetti:nth-child(3) { left: 29%; }
+    .confetti:nth-child(4) { left: 41%; }
+    .confetti:nth-child(5) { left: 53%; }
+    .confetti:nth-child(6) { left: 65%; }
+    .confetti:nth-child(7) { left: 76%; }
+    .confetti:nth-child(8) { left: 88%; }
+    @keyframes celebration-pop {
+      60% { transform: scale(1.15) rotate(2deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+    @keyframes confetti-fall {
+      to { transform: translateY(125vh) rotate(720deg); }
+    }
+    #winner-screen h2 { font-size: clamp(2.5rem, 10vw, 5rem); }
+    @media (max-width: 540px) {
+      .screen { padding: 15px 8px; }
+      .panel, .arena { padding: 14px; }
+      .fighter-card { flex-basis: 140px; }
+      .fighter-image { height: 110px; }
+      .attacks { gap: 9px; }
+      .attacks button { flex: 1 1 140px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="start-screen" class="screen active">
+      <h1>LUCHA</h1>
+      <button id="start-button">EMPEZAR PARTIDA</button>
+    </section>
+
+    <section id="count-screen" class="screen">
+      <div class="panel">
+        <h2>¿CUÁNTOS JUGADORES?</h2>
+        <div class="choice-row">
+          <button data-count="2">2 JUGADORES</button>
+          <button data-count="3">3 JUGADORES</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="setup-screen" class="screen">
+      <div class="panel">
+        <h2>PREPARAR LUCHADORES</h2>
+        <form id="setup-form">
+          <div id="setup-grid" class="setup-grid"></div>
+          <button type="submit" style="margin-top:20px">¡COMENZAR PELEA!</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen">
+      <h2>PELEA</h2>
+      <div id="fighters" class="fighters"></div>
+      <div class="arena">
+        <div id="fall-number"></div>
+        <div id="turn"></div>
+        <div id="target-status" class="target-wrap">Selecciona la carta de un contrincante para atacar.</div>
+        <button id="power-mode" class="power-mode" type="button">💥 GOLPE FUERTE: NO</button>
+        <div class="power-help">Más daño por 30 de poder. Con más poder también recibes menos daño.</div>
+        <div id="attacks" class="attacks"></div>
+        <div id="message">¡Que comience la pelea!</div>
+      </div>
+    </section>
+
+    <section id="winner-screen" class="screen">
+      <div class="panel">
+        <div class="fighter-icon">🏆</div>
+        <h2 id="winner"></h2>
+        <button id="again-button">JUGAR OTRA VEZ</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="free-modal" class="modal">
+    <div class="panel">
+      <h2>ATAQUE LIBRE</h2>
+      <label for="free-attack">Escribe tu ataque:</label>
+      <input id="free-attack" maxlength="40" autocomplete="off" placeholder="Super patada">
+      <div class="choice-row">
+        <button id="free-confirm">ATACAR</button>
+        <button id="free-cancel" type="button">CANCELAR</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fall-celebration" class="fall-celebration" aria-live="assertive">
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="celebration-message">🏆 ¡CAÍDA!<span id="fall-winner"></span></div>
+  </div>
+
+  <script>
+    const fighters = {
+      rudo: {
+        name: "El Enmascarado de Terciopelo",
+        type: "RUDO",
+        image: "assets/enmascarado-de-terciopelo.png"
+      },
+      tecnico: {
+        name: "Golden Fire",
+        type: "TÉCNICO",
+        image: "assets/golden-fire.png"
+      },
+      exterminador: {
+        name: "El Exterminador",
+        type: "RUDO",
+        image: "assets/el-exterminador.svg"
+      },
+      karla: {
+        name: "Karla",
+        type: "TÉCNICA",
+        image: "assets/karla.svg"
+      }
+    };
+    const commonAttacks = [
+      "Gancho al cuello", "Bola dora", "Golpe relámpago",
+      "Llave de cintura", "Patada giratoria", "Derribo rápido"
+    ];
+    const specialAttacks = {
+      rudo: ["La Voladora", "La Cordobesa", "Castigo al brazo"],
+      tecnico: ["Tirar del ring"],
+      exterminador: ["La Voladora", "La Cordobesa", "Castigo al brazo"],
+      karla: ["Tirar del ring"]
+    };
+    const attackArt = {
+      "Gancho al cuello": "💪",
+      "Bola dora": "🟡",
+      "Golpe relámpago": "⚡",
+      "Llave de cintura": "🫂",
+      "Patada giratoria": "🦵",
+      "Derribo rápido": "💨",
+      "La Voladora": "🦅",
+      "La Cordobesa": "🤸",
+      "Castigo al brazo": "🦾",
+      "Tirar del ring": "🤼"
+    };
+    let players = [];
+    let current = 0;
+    let locked = false;
+    let customAttacks = [];
+    let strongAttack = false;
+    let selectedTarget = null;
+    let extraTurnPending = false;
+    let isExtraTurn = false;
+    let lastSpokenAttack = "";
+    let lastSpokenAt = 0;
+    const playerSetupStorageKey = count => `lucha-player-setup-${count}`;
+
+    const $ = (selector) => document.querySelector(selector);
+    const show = (id) => {
+      document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+      $("#" + id).classList.add("active");
+    };
+
+    $("#start-button").addEventListener("click", () => show("count-screen"));
+    document.querySelectorAll("[data-count]").forEach(button => {
+      button.addEventListener("click", () => buildSetup(Number(button.dataset.count)));
+    });
+    $("#again-button").addEventListener("click", resetGame);
+
+    function buildSetup(count) {
+      $("#setup-grid").innerHTML = Array.from({ length: count }, (_, i) => `
+        <div class="player-form">
+          <h3>JUGADOR ${i + 1}</h3>
+          <label for="name-${i}">Nombre</label>
+          <input id="name-${i}" name="name-${i}" maxlength="20" required placeholder="Jugador ${i + 1}">
+          <label for="fighter-${i}">Luchador</label>
+          <select id="fighter-${i}" name="fighter-${i}">
+            <option value="rudo">🤼 El Enmascarado de Terciopelo — Rudo</option>
+            <option value="tecnico">🔥 Golden Fire — Técnico</option>
+            <option value="exterminador">💀 El Exterminador — Rudo</option>
+            <option value="karla">⚡ Karla — Técnica</option>
+          </select>
+        </div>
+      `).join("");
+      const savedPlayers = loadPlayerSetup(count);
+      savedPlayers.forEach((player, i) => {
+        $(`#name-${i}`).value = player.name;
+        $(`#fighter-${i}`).value = player.fighter;
+      });
+      show("setup-screen");
+      $("#name-0").focus();
+    }
+
+    $("#setup-form").addEventListener("submit", event => {
+      event.preventDefault();
+      players = [...document.querySelectorAll(".player-form")].map((form, i) => ({
+        name: form.querySelector("input").value.trim() || `Jugador ${i + 1}`,
+        fighter: form.querySelector("select").value,
+        hp: 100,
+        power: 100,
+        falls: 0
+      }));
+      savePlayerSetup(players);
+      current = 0;
+      locked = false;
+      customAttacks = [];
+      strongAttack = false;
+      selectedTarget = null;
+      extraTurnPending = false;
+      isExtraTurn = false;
+      show("game-screen");
+      renderGame();
+    });
+
+    function loadPlayerSetup(count) {
+      try {
+        const storedSetup = localStorage.getItem(playerSetupStorageKey(count));
+        if (!storedSetup) return [];
+        const savedPlayers = JSON.parse(storedSetup);
+        if (!Array.isArray(savedPlayers) || savedPlayers.length !== count) return [];
+        const isValid = savedPlayers.every(player =>
+          typeof player.name === "string" &&
+          typeof player.fighter === "string" &&
+          Object.hasOwn(fighters, player.fighter)
+        );
+        if (!isValid) {
+          console.warn("La configuración guardada de jugadores no es válida.");
+          return [];
+        }
+        return savedPlayers;
+      } catch (error) {
+        console.error("No se pudo leer la configuración guardada de jugadores.", error);
+        return [];
+      }
+    }
+
+    function savePlayerSetup(currentPlayers) {
+      const setup = currentPlayers.map(({ name, fighter }) => ({ name, fighter }));
+      try {
+        localStorage.setItem(playerSetupStorageKey(currentPlayers.length), JSON.stringify(setup));
+      } catch (error) {
+        console.error("No se pudo guardar la configuración de jugadores.", error);
+      }
+    }
+
+    function renderGame() {
+      $("#fighters").innerHTML = players.map((player, i) => {
+        const info = fighters[player.fighter];
+        const isCurrent = i === current;
+        const isTarget = i === selectedTarget;
+        return `
+          <article class="fighter-card ${isCurrent ? "current" : "target-option"} ${isTarget ? "selected-target" : ""}"
+            data-player="${i}" ${isCurrent ? "" : 'role="button" tabindex="0"'}>
+            ${isCurrent ? '<div class="turn-badge">▶ TU TURNO</div>' : ""}
+            ${isTarget ? '<div class="target-badge">🎯 OBJETIVO</div>' : ""}
+            <img class="fighter-image" src="${info.image}" alt="${info.name}">
+            <h3>${escapeHtml(player.name)}</h3>
+            <p>${info.name}</p>
+            <p><strong>${info.type}</strong></p>
+            <div class="falls" aria-label="${player.falls} caídas ganadas">CAÍDAS: ${"●".repeat(player.falls)}${"○".repeat(2 - player.falls)}</div>
+            <div class="hp-shell"><div class="hp-bar" style="width:${player.hp}%"></div></div>
+            <div class="hp-text">${player.hp} HP</div>
+            <div class="power-shell"><div class="power-bar" style="width:${player.power}%"></div></div>
+            <div class="power-text">${player.power} PODER · ${Math.round(player.power * 0.4)}% DEFENSA</div>
+          </article>
+        `;
+      }).join("");
+
+      const completedFalls = players.reduce((total, player) => total + player.falls, 0);
+      $("#fall-number").textContent = `CAÍDA ${completedFalls + 1} DE 3 · GANA QUIEN CONSIGA 2`;
+      $("#turn").textContent = `▶ TURNO DE ${players[current].name.toUpperCase()}${isExtraTurn ? " · ¡TURNO EXTRA!" : ""}`;
+      document.querySelectorAll(".target-option").forEach(card => {
+        const selectCard = () => selectTarget(Number(card.dataset.player));
+        card.addEventListener("click", selectCard);
+        card.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectCard();
+          }
+        });
+      });
+      $("#target-status").textContent = selectedTarget === null
+        ? "Selecciona la carta de un contrincante para atacar."
+        : `Objetivo seleccionado: ${players[selectedTarget].name}`;
+
+      const attacks = [...commonAttacks, ...specialAttacks[players[current].fighter], ...customAttacks];
+      $("#attacks").innerHTML = attacks
+        .map((name, i) => `
+          <button data-attack-index="${i}" aria-label="${escapeHtml(name)}">
+            <span class="attack-art">${attackArt[name] || "✨"}</span>
+            <span class="attack-name">${escapeHtml(name)}</span>
+          </button>
+        `)
+        .join("") + `
+          <button class="free" id="free-button">
+            <span class="attack-art">✍️</span>
+            <span class="attack-name">ATAQUE LIBRE</span>
+          </button>
+        `;
+      document.querySelectorAll("[data-attack-index]").forEach(button => {
+        const attackName = attacks[Number(button.dataset.attackIndex)];
+        button.disabled = selectedTarget === null;
+        button.addEventListener("mouseenter", () => speakAttack(attackName));
+        button.addEventListener("focus", () => speakAttack(attackName));
+        button.addEventListener("click", () => attack(attackName));
+      });
+      $("#free-button").addEventListener("mouseenter", () => speakAttack("Ataque libre"));
+      $("#free-button").addEventListener("focus", () => speakAttack("Ataque libre"));
+      $("#free-button").addEventListener("click", openFreeAttack);
+      $("#free-button").disabled = selectedTarget === null;
+      const powerButton = $("#power-mode");
+      powerButton.classList.toggle("active", strongAttack);
+      powerButton.textContent = strongAttack ? "💥 GOLPE FUERTE: SÍ" : "💥 GOLPE FUERTE: NO";
+      powerButton.disabled = players[current].power < 30;
+      powerButton.addEventListener("click", toggleStrongAttack);
+    }
+
+    function speakAttack(name) {
+      if (!("speechSynthesis" in window)) return;
+      const now = Date.now();
+      if (name === lastSpokenAttack && now - lastSpokenAt < 500) return;
+      lastSpokenAttack = name;
+      lastSpokenAt = now;
+
+      window.speechSynthesis.cancel();
+      const announcement = new SpeechSynthesisUtterance(name);
+      announcement.lang = "es-ES";
+      const spanishVoice = window.speechSynthesis.getVoices()
+        .find(voice => voice.lang.toLowerCase().startsWith("es"));
+      if (spanishVoice) announcement.voice = spanishVoice;
+      window.speechSynthesis.speak(announcement);
+    }
+
+    function selectTarget(index) {
+      if (locked || index === current) return;
+      selectedTarget = index;
+      renderGame();
+    }
+
+    function attack(name) {
+      if (locked || selectedTarget === null) return;
+      locked = true;
+      const attacker = players[current];
+      const targetIndex = selectedTarget;
+      const defender = players[targetIndex];
+      const isStrong = strongAttack && attacker.power >= 30;
+      strongAttack = false;
+      if (isStrong) {
+        attacker.power -= 30;
+        updatePower(current);
+      }
+      if (Math.random() < 0.18) {
+        $("#message").innerHTML = `¡El ataque <strong>${escapeHtml(name)}</strong> de ${escapeHtml(attacker.name)} fue <strong>INVALIDADO</strong>!<br>` +
+          `${isStrong ? "El golpe fuerte consumió 30 de poder. " : ""}El turno pasa al siguiente jugador.`;
+        setTimeout(nextTurn, 900);
+        return;
+      }
+
+      const rawDamage = Math.floor(Math.random() * 21) + 35 + (isStrong ? 20 : 0);
+      const defense = defender.power * 0.004;
+      const damage = Math.round(rawDamage * (1 - defense));
+      const blockedDamage = rawDamage - damage;
+      defender.hp = Math.max(0, defender.hp - damage);
+
+      $("#message").innerHTML = `<strong>${escapeHtml(attacker.name)}</strong> utiliza ${isStrong ? "un GOLPE FUERTE con " : ""}<strong>${escapeHtml(name)}</strong>.<br>` +
+        `${escapeHtml(defender.name)} bloquea ${blockedDamage} y recibe ${damage} de daño.${defender.hp === 0 ? " ¡CAÍDA!" : ""}`;
+      updateHealth(targetIndex);
+      const targetCard = document.querySelector(`[data-player="${targetIndex}"]`);
+      targetCard.classList.add("hit");
+      setTimeout(() => targetCard.classList.remove("hit"), 400);
+
+      if (defender.hp === 0) {
+        attacker.falls++;
+        extraTurnPending = false;
+        celebrateFall(attacker);
+        if (attacker.falls === 2) {
+          setTimeout(() => endGame(attacker), 1800);
+          return;
+        }
+        const nextPlayer = (current + 1) % players.length;
+        setTimeout(() => startNextFall(nextPlayer, attacker), 1800);
+        return;
+      }
+
+      if (!isExtraTurn && Math.random() < 0.2) {
+        extraTurnPending = true;
+        $("#message").innerHTML += `<br><strong>¡${escapeHtml(attacker.name)} consigue un TURNO DOBLE!</strong>`;
+      }
+      setTimeout(nextTurn, 900);
+    }
+
+    function celebrateFall(scorer) {
+      $("#fall-winner").textContent = `${scorer.name.toUpperCase()} GANA LA CAÍDA`;
+      $("#fall-celebration").classList.add("open");
+    }
+
+    function updateHealth(index) {
+      const card = document.querySelector(`[data-player="${index}"]`);
+      card.querySelector(".hp-bar").style.width = players[index].hp + "%";
+      card.querySelector(".hp-text").textContent = `${players[index].hp} HP`;
+    }
+
+    function updatePower(index) {
+      const card = document.querySelector(`[data-player="${index}"]`);
+      card.querySelector(".power-bar").style.width = players[index].power + "%";
+      card.querySelector(".power-text").textContent =
+        `${players[index].power} PODER · ${Math.round(players[index].power * 0.4)}% DEFENSA`;
+    }
+
+    function toggleStrongAttack() {
+      if (locked || players[current].power < 30) return;
+      strongAttack = !strongAttack;
+      const button = $("#power-mode");
+      button.classList.toggle("active", strongAttack);
+      button.textContent = strongAttack ? "💥 GOLPE FUERTE: SÍ" : "💥 GOLPE FUERTE: NO";
+    }
+
+    function nextTurn() {
+      if (extraTurnPending) {
+        extraTurnPending = false;
+        isExtraTurn = true;
+      } else {
+        current = (current + 1) % players.length;
+        isExtraTurn = false;
+      }
+      selectedTarget = null;
+      strongAttack = false;
+      locked = false;
+      renderGame();
+    }
+
+    function startNextFall(starterIndex, scorer) {
+      $("#fall-celebration").classList.remove("open");
+      players.forEach(player => {
+        player.hp = 100;
+        player.power = 100;
+      });
+      current = starterIndex;
+      selectedTarget = null;
+      extraTurnPending = false;
+      isExtraTurn = false;
+      strongAttack = false;
+      locked = false;
+      renderGame();
+      $("#message").innerHTML = `<strong>${escapeHtml(scorer.name)}</strong> gana la caída.<br>` +
+        `Todos recuperan su vida. ¡Comienza la siguiente caída!`;
+    }
+
+    function openFreeAttack() {
+      if (locked || selectedTarget === null) return;
+      $("#free-modal").classList.add("open");
+      $("#free-attack").value = "";
+      $("#free-attack").focus();
+    }
+
+    function closeFreeAttack() {
+      $("#free-modal").classList.remove("open");
+    }
+
+    $("#free-confirm").addEventListener("click", () => {
+      const name = $("#free-attack").value.trim();
+      if (!name) {
+        $("#free-attack").focus();
+        return;
+      }
+      if (!customAttacks.some(attackName => attackName.toLowerCase() === name.toLowerCase())) {
+        customAttacks.push(name);
+      }
+      closeFreeAttack();
+      attack(name);
+    });
+    $("#free-cancel").addEventListener("click", closeFreeAttack);
+    $("#free-attack").addEventListener("keydown", event => {
+      if (event.key === "Enter") $("#free-confirm").click();
+      if (event.key === "Escape") closeFreeAttack();
+    });
+
+    function endGame(winner) {
+      $("#fall-celebration").classList.remove("open");
+      $("#winner").textContent = `¡${winner.name.toUpperCase()} GANA!`;
+      show("winner-screen");
+    }
+
+    function resetGame() {
+      players = [];
+      current = 0;
+      locked = false;
+      customAttacks = [];
+      strongAttack = false;
+      selectedTarget = null;
+      extraTurnPending = false;
+      isExtraTurn = false;
+      $("#fall-celebration").classList.remove("open");
+      $("#message").textContent = "¡Que comience la pelea!";
+      show("start-screen");
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[char]);
+    }
+  </script>
+</body>
+</html>
