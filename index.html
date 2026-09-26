@@ -102,7 +102,10 @@
     .picker-preview figcaption { margin-top: 8px; }
     .picker-preview strong { display: block; font-size: 1.3rem; }
     .picker-preview span { color: #ffd230; font-family: Arial, sans-serif; font-weight: bold; }
-    .thumbs { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+    .thumbs-label { margin: 10px 0 4px; font: bold .75rem Arial, sans-serif; letter-spacing: 2px; color: #ffd230; }
+    .thumbs { display: grid; grid-template-columns: repeat(4, minmax(0, 60px)); justify-content: center; gap: 5px; }
+    .thumb.rudo { background: #3a0d16; }
+    .thumb.tecnico { background: #0d2a3a; }
     .thumb {
       padding: 2px;
       border: 3px solid transparent;
@@ -112,12 +115,16 @@
     }
     .thumb img {
       display: block;
-      width: 54px;
-      height: 54px;
+      width: 100%;
+      aspect-ratio: 1;
       border-radius: 6px;
       object-fit: cover;
       object-position: center 14%;
+      /* acerca la cara del luchador */
+      transform: scale(1.65);
+      transform-origin: 50% 30%;
     }
+    .thumb { overflow: hidden; }
     .thumb[aria-checked="true"] { border-color: #ffd230; box-shadow: 0 0 12px #ffd23099; }
     @keyframes swap-in { from { transform: scale(.85); opacity: .3; } }
 
@@ -174,7 +181,7 @@
       background: #0a0510;
       transition: height .45s ease, filter .3s;
     }
-    .compact .fighter-image { height: 64px; object-position: center 22%; }
+    .compact .fighter-image { height: 64px; object-position: center 30%; }
     .fighter-card h3 { margin: 6px 0 2px; font-size: 1.35rem; transition: font-size .45s; }
     .compact h3 { font-size: 1rem; }
     .card-details {
@@ -633,39 +640,30 @@
   </div>
 
   <script>
+    // Las claves "rudo" y "tecnico" se mantienen por las elecciones guardadas en el navegador.
     const fighters = {
-      rudo: {
-        name: "El Enmascarado de Terciopelo",
-        type: "RUDO",
-        image: "assets/enmascarado-de-terciopelo.svg"
-      },
-      tecnico: {
-        name: "Golden Fire",
-        type: "TÉCNICO",
-        image: "assets/golden-fire.svg"
-      },
-      exterminador: {
-        name: "El Exterminador",
-        type: "RUDO",
-        image: "assets/el-exterminador.svg"
-      },
-      karla: {
-        name: "Karla",
-        type: "TÉCNICA",
-        image: "assets/karla.svg"
-      }
+      rudo: { name: "El Enmascarado de Terciopelo", type: "RUDO", side: "rudo", image: "assets/enmascarado-de-terciopelo.svg" },
+      exterminador: { name: "El Exterminador", type: "RUDO", side: "rudo", image: "assets/el-exterminador.svg" },
+      viuda: { name: "La Viuda Negra", type: "RUDA", side: "rudo", image: "assets/la-viuda-negra.svg" },
+      toro: { name: "El Toro Salvaje", type: "RUDO", side: "rudo", image: "assets/el-toro-salvaje.svg" },
+      tecnico: { name: "Golden Fire", type: "TÉCNICO", side: "tecnico", image: "assets/golden-fire.svg" },
+      karla: { name: "Karla", type: "TÉCNICA", side: "tecnico", image: "assets/karla.svg" },
+      halcon: { name: "Halcón Plateado", type: "TÉCNICO", side: "tecnico", image: "assets/halcon-plateado.svg" },
+      estrella: { name: "Estrella Fugaz", type: "TÉCNICA", side: "tecnico", image: "assets/estrella-fugaz.svg" }
     };
     const fighterKeys = Object.keys(fighters);
+    const sides = [["rudo", "RUDOS"], ["tecnico", "TÉCNICOS"]];
+    // Por defecto se enfrentan un rudo y un técnico.
+    const defaultChoices = ["rudo", "tecnico", "exterminador"];
     const commonAttacks = [
       "Gancho al cuello", "Bola dora", "Golpe relámpago",
       "Llave de cintura", "Patada giratoria", "Derribo rápido"
     ];
     const specialAttacks = {
       rudo: ["La Voladora", "La Cordobesa", "Castigo al brazo"],
-      tecnico: ["Tirar del ring"],
-      exterminador: ["La Voladora", "La Cordobesa", "Castigo al brazo"],
-      karla: ["Tirar del ring"]
+      tecnico: ["Tirar del ring"]
     };
+    const specialsOf = key => specialAttacks[fighters[key].side];
     const attackArt = {
       "Gancho al cuello": "💪",
       "Bola dora": "🟡",
@@ -871,7 +869,7 @@
 
     function buildSetup(count) {
       const saved = loadPlayerSetup(count);
-      setupChoices = Array.from({ length: count }, (_, i) => saved[i] || fighterKeys[i % fighterKeys.length]);
+      setupChoices = Array.from({ length: count }, (_, i) => saved[i] || defaultChoices[i % defaultChoices.length]);
       $("#setup-grid").innerHTML = setupChoices.map((_, i) => `
         <div class="picker" data-picker="${i}">
           <h3>JUGADOR ${i + 1}</h3>
@@ -883,11 +881,16 @@
             </figure>
             <button type="button" class="arrow" data-step="1" aria-label="Luchador siguiente para el jugador ${i + 1}">›</button>
           </div>
-          <div class="thumbs" role="radiogroup" aria-label="Luchadores del jugador ${i + 1}">
-            ${fighterKeys.map(key => `
-              <button type="button" class="thumb" role="radio" data-fighter="${key}" aria-label="${fighters[key].name}">
-                <img src="${fighters[key].image}" alt="">
-              </button>
+          <div role="radiogroup" aria-label="Luchadores del jugador ${i + 1}">
+            ${sides.map(([side, label]) => `
+              <div class="thumbs-label">${label}</div>
+              <div class="thumbs">
+                ${fighterKeys.filter(key => fighters[key].side === side).map(key => `
+                  <button type="button" class="thumb ${side}" role="radio" data-fighter="${key}" aria-label="${fighters[key].name}">
+                    <img src="${fighters[key].image}" alt="">
+                  </button>
+                `).join("")}
+              </div>
             `).join("")}
           </div>
         </div>
@@ -1001,7 +1004,7 @@
     function buildCards() {
       $("#fighters").innerHTML = '<div class="vs" aria-hidden="true">VS</div>' + players.map((player, i) => {
         const info = fighters[player.fighter];
-        const specials = specialAttacks[player.fighter].map(name => `${attackArt[name]} ${name}`).join(" · ");
+        const specials = specialsOf(player.fighter).map(name => `${attackArt[name]} ${name}`).join(" · ");
         return `
           <article class="fighter-card" data-player="${i}">
             <div class="card-badge"></div>
@@ -1194,7 +1197,7 @@
       const fighter = players[current].fighter;
       return [
         ...commonAttacks.map(name => ({ name, icon: attackArt[name], kind: "common" })),
-        ...specialAttacks[fighter].map(name => ({ name, icon: attackArt[name], kind: "special" })),
+        ...specialsOf(fighter).map(name => ({ name, icon: attackArt[name], kind: "special" })),
         ...customAttacks.map(attack => ({ ...attack, kind: "custom" }))
       ];
     }
