@@ -127,6 +127,19 @@
     .thumb { overflow: hidden; }
     .thumb[aria-checked="true"] { border-color: #ffd230; box-shadow: 0 0 12px #ffd23099; }
     @keyframes swap-in { from { transform: scale(.85); opacity: .3; } }
+    .format-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+    .format-picker .field-label { width: 100%; margin: 0; text-align: center; }
+    .format-option {
+      display: flex;
+      min-width: 170px;
+      flex-direction: column;
+      gap: 2px;
+      border: 3px solid transparent;
+      background: #4a2a58;
+      box-shadow: 0 4px 0 #26122e;
+    }
+    .format-option small { color: #f3dcff; font: .8rem Arial, sans-serif; }
+    .format-option[aria-checked="true"] { border-color: #ffd230; background: #d9263f; box-shadow: 0 4px 0 #7f1022, 0 0 14px #ffd23099; }
 
     /* ---------- Pantalla de pelea ---------- */
     #game-screen { justify-content: flex-start; gap: 12px; }
@@ -156,6 +169,9 @@
     .fighter-card.option { cursor: pointer; opacity: .6; filter: grayscale(.6); }
     .fighter-card.option:hover, .fighter-card.option:focus-visible { opacity: .9; filter: none; border-color: #ff8d30; outline: none; }
     .fighter-card.option.defender { opacity: 1; filter: none; }
+    .fighter-card.out { opacity: .5; }
+    .fighter-card.out .fighter-image { filter: grayscale(1) brightness(.6); }
+    .out .card-badge { color: #fff; background: #4a2a58; }
     [data-phase="intro"].multi .fighter-card { width: min(250px, 42vw); }
     .fighter-card.compact { width: min(210px, 40vw); padding: 8px; }
     .card-badge {
@@ -182,6 +198,23 @@
       transition: height .45s ease, filter .3s;
     }
     .compact .fighter-image { height: 64px; object-position: center 30%; }
+    /* Supergolpe: visible mientras no se ha usado */
+    .super-chip {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #1c0b05;
+      font: bold .75rem Arial, sans-serif;
+      background: linear-gradient(145deg, #fff27a, #ffb300);
+      box-shadow: 0 0 10px #ffd230;
+      animation: super-glow 1.2s ease-in-out infinite alternate;
+      transition: opacity .5s, transform .5s;
+    }
+    .super-chip.used { opacity: 0; transform: scale(0) rotate(30deg); animation: none; }
+    .compact .super-chip { top: 3px; right: 3px; padding: 1px 5px; font-size: .65rem; }
+    @keyframes super-glow { to { box-shadow: 0 0 20px #ffd230, 0 0 34px #ff9d24; } }
     .fighter-card h3 { margin: 6px 0 2px; font-size: 1.35rem; transition: font-size .45s; }
     .compact h3 { font-size: 1rem; }
     .card-details {
@@ -243,6 +276,8 @@
     .fighter-card.ko .fighter-image { filter: grayscale(1) brightness(.7); }
     .fighter-card.striking { animation: lunge .5s ease-out; }
     .fighter-card.fumbled { animation: wobble .6s; }
+    .fighter-card.super-strike { border-color: #ffd230; box-shadow: 0 0 40px #ffd230; animation: super-lunge .7s ease-out; }
+    @keyframes super-lunge { 30% { transform: translateX(-10px) scale(.96); } 55% { transform: translateX(44px) scale(1.12); } }
     .card-stamp.up { border-color: #35cf57; color: #35cf57; }
     .fighter-card.rising { border-color: #35cf57; box-shadow: 0 0 30px #35cf57aa; animation: rise .8s ease-out; }
     .fighter-card.rising .damage-pop { color: #35cf57; animation: pop-up 1.6s ease-out forwards; }
@@ -323,6 +358,8 @@
     .choose-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 16px; }
     .power-mode { background: #285a8f; box-shadow: 0 4px 0 #123252; }
     .power-mode.active { color: #1c0b05; background: #ff9d24; box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ff9d24aa; }
+    .super-mode { background: linear-gradient(145deg, #b8860b, #6b4a00); box-shadow: 0 4px 0 #3d2a00; }
+    .super-mode.active { color: #1c0b05; background: linear-gradient(145deg, #fff27a, #ffb300); box-shadow: 0 4px 0 #9b6a00, 0 0 22px #ffd230; }
     .attack-go { min-width: 240px; font-size: 1.35rem; }
     .power-help { margin: 10px 0 0; color: #a9dfff; font: .85rem Arial, sans-serif; }
     .result-box {
@@ -542,6 +579,11 @@
         <h2>ELIGE TU LUCHADOR</h2>
         <form id="setup-form">
           <div id="setup-grid" class="setup-grid"></div>
+          <div class="format-picker" role="radiogroup" aria-labelledby="format-label">
+            <div id="format-label" class="field-label">¿A CUÁNTAS CAÍDAS?</div>
+            <button type="button" class="format-option" role="radio" data-falls="1"><strong>UNA CAÍDA</strong><small>Gana la primera caída</small></button>
+            <button type="button" class="format-option" role="radio" data-falls="2"><strong>DOS DE TRES</strong><small>Gana quien consiga 2</small></button>
+          </div>
           <button type="submit" style="margin-top:20px">¡COMENZAR PELEA!</button>
         </form>
       </div>
@@ -563,9 +605,11 @@
             <div id="attacks" class="attacks"></div>
             <div class="choose-actions">
               <button id="power-mode" class="power-mode" type="button" aria-pressed="false">💥 GOLPE FUERTE: NO</button>
+              <button id="super-mode" class="super-mode" type="button" aria-pressed="false">🌟 SUPERGOLPE</button>
               <button id="attack-button" class="attack-go" type="button">ELIGE UN ATAQUE</button>
             </div>
-            <div class="power-help">Golpe fuerte: más daño por 30 de poder. Con más poder también recibes menos daño.</div>
+            <div class="power-help">Golpe fuerte: más daño por 30 de poder. Con más poder también recibes menos daño.<br>
+              Supergolpe: solo una vez por partida. El árbitro no lo invalida y no se puede bloquear.</div>
           </div>
           <div id="result-panel" class="phase-panel">
             <div class="result-box">
@@ -698,6 +742,7 @@
     let currentAttacks = [];
     let selectedAttack = null;
     let strongAttack = false;
+    let superAttack = false;
     let selectedTarget = null;
     let extraTurnPending = false;
     let isExtraTurn = false;
@@ -707,6 +752,9 @@
     let freeIcon = freeIcons[0];
     let celebrationAction = null;
     const playerSetupStorageKey = count => `lucha-player-setup-${count}`;
+    // Caídas necesarias para ganar la lucha: 1 (a una caída) o 2 (dos de tres).
+    let fallsToWin = 2;
+    try { if (localStorage.getItem("lucha-falls") === "1") fallsToWin = 1; } catch (error) { /* sin almacenamiento */ }
 
     const $ = (selector) => document.querySelector(selector);
     const pick = (options) => options[Math.floor(Math.random() * options.length)];
@@ -860,7 +908,8 @@
     $("#start-button").addEventListener("click", () => {
       show("count-screen");
       // Se pide el micrófono aquí, una sola vez, para no preguntar en cada grabación.
-      ensureMic().catch(() => { /* sin permiso: la grabación lo volverá a pedir */ });
+      // En el móvil no: tenerlo abierto bloquea el dictado.
+      if (!isMobile) ensureMic().catch(() => { /* sin permiso: la grabación lo volverá a pedir */ });
     });
     document.querySelectorAll("[data-count]").forEach(button => {
       button.addEventListener("click", () => buildSetup(Number(button.dataset.count)));
@@ -909,6 +958,7 @@
         });
         renderPicker(i, false);
       });
+      renderFormatPicker();
       show("setup-screen");
       document.querySelector(".picker [data-step='1']").focus();
     }
@@ -942,9 +992,23 @@
       });
     }
 
+    function renderFormatPicker() {
+      document.querySelectorAll("[data-falls]").forEach(button => {
+        button.setAttribute("aria-checked", String(Number(button.dataset.falls) === fallsToWin));
+      });
+    }
+    document.querySelectorAll("[data-falls]").forEach(button => {
+      button.addEventListener("click", () => {
+        fallsToWin = Number(button.dataset.falls);
+        try { localStorage.setItem("lucha-falls", String(fallsToWin)); } catch (error) { /* sin almacenamiento */ }
+        renderFormatPicker();
+        say(fallsToWin === 1 ? "¡A una caída!" : "¡A dos de tres caídas!");
+      });
+    });
+
     $("#setup-form").addEventListener("submit", event => {
       event.preventDefault();
-      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0, knockdowns: 0 }));
+      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0, knockdowns: 0, out: false, superUsed: false }));
       players.forEach((player, i) => {
         player.label = displayName(i);
         player.spoken = spokenName(i);
@@ -1010,6 +1074,7 @@
             <div class="card-badge"></div>
             <div class="card-art">
               <img class="fighter-image" src="${info.image}" alt="${info.name}">
+              <div class="super-chip" title="Supergolpe disponible">🌟 SÚPER</div>
               <div class="card-stamp"></div>
               <div class="damage-pop"></div>
             </div>
@@ -1048,16 +1113,22 @@
       card.querySelector(".hp-text").textContent = `${player.hp} HP`;
       card.querySelector(".power-bar").style.width = player.power + "%";
       card.querySelector(".power-text").textContent = `${player.power} PODER · ${Math.round(player.power * 0.4)}% DEFENSA`;
-      card.querySelector(".falls").textContent = `CAÍDAS ${"●".repeat(player.falls)}${"○".repeat(Math.max(0, 2 - player.falls))}`;
+      // A una caída no hay marcador que mostrar.
+      card.querySelector(".falls").textContent = fallsToWin === 1
+        ? ""
+        : `CAÍDAS ${"●".repeat(player.falls)}${"○".repeat(Math.max(0, fallsToWin - player.falls))}`;
+      card.querySelector(".super-chip").classList.toggle("used", player.superUsed);
     }
 
     function updateCards() {
-      const multi = players.length > 2;
+      const multi = choosingTarget();
       document.querySelectorAll(".fighter-card").forEach(card => {
         const i = Number(card.dataset.player);
+        const isOut = players[i].out;
         const isAttacker = i === current;
         const isDefender = i === selectedTarget;
-        const isOption = phase === "intro" && multi && !isAttacker;
+        const isOption = phase === "intro" && multi && !isAttacker && !isOut;
+        card.classList.toggle("out", isOut);
         card.classList.toggle("attacker", isAttacker);
         card.classList.toggle("defender", isDefender);
         card.classList.toggle("option", isOption);
@@ -1075,14 +1146,14 @@
         }
         card.querySelector(".card-badge").textContent = isAttacker
           ? (isExtraTurn ? "⭐ TURNO EXTRA" : "⚔️ ATACA")
-          : isDefender ? "🎯 OBJETIVO" : isOption ? "ELEGIR" : "";
+          : isDefender ? "🎯 OBJETIVO" : isOption ? "ELEGIR" : isOut ? "❌ FUERA" : "";
         updateBars(i);
       });
     }
 
     function clearEffects() {
       document.querySelectorAll(".fighter-card").forEach(card => {
-        card.classList.remove("damaged", "ko", "striking", "fumbled", "rising");
+        card.classList.remove("damaged", "ko", "striking", "super-strike", "fumbled", "rising");
         card.querySelector(".card-stamp").classList.remove("show", "up");
       });
     }
@@ -1092,16 +1163,28 @@
       return players.reduce((total, player) => total + player.falls, 0);
     }
 
+    // Con tres jugadores, quien cae a la lona queda fuera de la caída: la gana el último en pie.
+    const aliveIndexes = () => players.map((_, i) => i).filter(i => !players[i].out);
+    const choosingTarget = () => aliveIndexes().length > 2;
+
+    function fallLabel() {
+      const lastStanding = players.length > 2 ? " · GANA QUIEN QUEDE EN PIE" : "";
+      if (fallsToWin === 1) return `A UNA CAÍDA${lastStanding}`;
+      // Con tres jugadores puede hacer falta una cuarta caída.
+      const number = players.length > 2 ? `CAÍDA ${totalFalls() + 1}` : `CAÍDA ${Math.min(3, totalFalls() + 1)} DE 3`;
+      return `${number} · GANA QUIEN CONSIGA 2`;
+    }
+
     function updateStage() {
       const stage = $("#stage");
       stage.dataset.phase = phase;
       stage.classList.toggle("multi", players.length > 2);
       updateCards();
       const attacker = players[current];
-      $("#fall-number").textContent = `CAÍDA ${Math.min(3, totalFalls() + 1)} DE 3 · GANA QUIEN CONSIGA 2`;
+      $("#fall-number").textContent = fallLabel();
       $("#turn-title").textContent = `▶ TURNO DE ${attacker.label.toUpperCase()}${isExtraTurn ? " · ¡TURNO EXTRA!" : ""}`;
       const help = $("#target-help");
-      help.hidden = players.length < 3;
+      help.hidden = !choosingTarget();
       help.textContent = selectedTarget === null
         ? "Toca la carta del luchador al que quieres atacar."
         : `Vas a atacar a ${players[selectedTarget].label}.`;
@@ -1114,8 +1197,9 @@
       locked = false;
       selectedAttack = null;
       strongAttack = false;
+      superAttack = false;
       pendingOutcome = null;
-      const opponents = players.map((_, i) => i).filter(i => i !== current);
+      const opponents = aliveIndexes().filter(i => i !== current);
       selectedTarget = opponents.length === 1 ? opponents[0] : null;
       clearEffects();
       updateStage();
@@ -1127,16 +1211,21 @@
     function introNarration(kind) {
       const attacker = players[current];
       const name = attacker.spoken;
-      const multi = players.length > 2;
+      const multi = choosingTarget();
       const rival = multi ? null : players[selectedTarget].spoken;
       let line;
       if (kind === "start") {
         line = multi
-          ? `¡Bienvenidos a la lucha libre! Esta noche, todos contra todos: ${listNames(players.map(p => p.spoken))}. ¡Abre el combate ${name}!`
+          ? `¡Bienvenidos a la lucha libre! Esta noche, todos contra todos: ${listNames(players.map(p => p.spoken))}. Gana el último que quede en pie. ¡Abre el combate ${name}!`
           : pick([
             `¡Bienvenidos a la lucha libre! En esta esquina, ${name}. Y enfrente, ${rival}. ¡Abre el combate ${name}!`,
             `¡Buenas noches, afición! Se enfrentan ${name} y ${rival}. ¡Empieza ${name}!`
           ]);
+      } else if (kind === "elimination") {
+        line = pick([
+          `¡Solo quedan ${listNames(aliveIndexes().map(i => players[i].spoken))}! Le toca a ${name}.`,
+          `¡Quedan dos en el ring! ${name} contra ${rival}. ¡Quien caiga, pierde!`
+        ]);
       } else if (kind === "fall") {
         line = pick([
           `¡Arranca la caída número ${totalFalls() + 1}! Todos recuperan fuerzas y empieza ${name}.`,
@@ -1147,7 +1236,7 @@
           ? pick([`¡Turno doble! ${name} no da ni un respiro.`, `¡Otra vez ${name}! ¡Esto es un vendaval!`])
           : pick([`¡Turno doble! ${name} no le da ni un respiro a ${rival}.`, `¡Otra vez ${name}! ¡Esto es un vendaval!`]);
       } else {
-        const rivalHp = Math.max(...players.filter((_, i) => i !== current).map(player => player.hp));
+        const rivalHp = Math.max(...aliveIndexes().filter(i => i !== current).map(i => players[i].hp));
         const target = multi ? "sus contrincantes" : rival;
         if (attacker.hp < rivalHp - 15) {
           line = pick([
@@ -1177,7 +1266,7 @@
     }
 
     function selectTarget(index) {
-      if (phase !== "intro" || locked || index === current || players.length < 3) return;
+      if (phase !== "intro" || locked || index === current || players[index].out || !choosingTarget()) return;
       selectedTarget = index;
       updateStage();
       say(`¡Contra ${players[index].spoken}!`);
@@ -1189,6 +1278,7 @@
       phase = "choose";
       selectedAttack = null;
       strongAttack = false;
+      superAttack = false;
       renderAttacks();
       updateStage();
     });
@@ -1240,7 +1330,15 @@
         button.disabled = locked;
       });
       $("#free-button").disabled = locked;
-      const canPower = attacker.power >= MIN_STRONG_POWER;
+      if (attacker.superUsed) superAttack = false;
+      const superButton = $("#super-mode");
+      superButton.hidden = attacker.superUsed;
+      superButton.disabled = locked;
+      superButton.classList.toggle("active", superAttack);
+      superButton.setAttribute("aria-pressed", String(superAttack));
+      superButton.textContent = superAttack ? "🌟 SUPERGOLPE: SÍ" : "🌟 SUPERGOLPE";
+      // El supergolpe ya es el máximo: no se suma al golpe fuerte.
+      const canPower = attacker.power >= MIN_STRONG_POWER && !superAttack;
       if (!canPower) strongAttack = false;
       const powerButton = $("#power-mode");
       powerButton.disabled = locked || !canPower;
@@ -1250,13 +1348,21 @@
       const attack = currentAttacks.find(item => item.name === selectedAttack);
       const attackButton = $("#attack-button");
       attackButton.disabled = locked || !attack;
-      attackButton.textContent = attack ? `¡ATACAR! ${attack.icon} ${attack.name.toUpperCase()}` : "ELIGE UN ATAQUE";
+      attackButton.textContent = attack
+        ? `${superAttack ? "🌟 ¡SUPERGOLPE!" : "¡ATACAR!"} ${attack.icon} ${attack.name.toUpperCase()}`
+        : "ELIGE UN ATAQUE";
     }
 
     speakOnHover($("#power-mode"), () => "Golpe fuerte");
     $("#power-mode").addEventListener("click", () => {
       if (phase !== "choose" || locked || players[current].power < MIN_STRONG_POWER) return;
       strongAttack = !strongAttack;
+      updateChoosePanel();
+    });
+    speakOnHover($("#super-mode"), () => "Supergolpe");
+    $("#super-mode").addEventListener("click", () => {
+      if (phase !== "choose" || locked || players[current].superUsed) return;
+      superAttack = !superAttack;
       updateChoosePanel();
     });
     $("#attack-button").addEventListener("click", performAttack);
@@ -1267,13 +1373,15 @@
       locked = true;
       const attacker = players[current];
       const defender = players[selectedTarget];
-      const isStrong = strongAttack && attacker.power >= MIN_STRONG_POWER;
+      const isSuper = superAttack && !attacker.superUsed;
+      const isStrong = !isSuper && strongAttack && attacker.power >= MIN_STRONG_POWER;
       const outcome = {
         attacker: current,
         defender: selectedTarget,
         attack,
         isStrong,
-        invalid: Math.random() < 0.18,
+        isSuper,
+        invalid: !isSuper && Math.random() < 0.18,
         damage: 0,
         blocked: 0,
         newHp: defender.hp,
@@ -1281,16 +1389,23 @@
         getsUp: false,
         riseHp: 0,
         ko: false,
+        fallOver: false,
         extra: false,
         applied: false,
         risen: false,
         finished: false
       };
-      if (!outcome.invalid) {
+      if (isSuper) {
+        // Supergolpe: 60-80 de daño que la defensa no reduce.
+        outcome.damage = Math.floor(Math.random() * 21) + 60;
+        outcome.newHp = Math.max(0, defender.hp - outcome.damage);
+      } else if (!outcome.invalid) {
         const rawDamage = Math.floor(Math.random() * 21) + 35 + (isStrong ? 20 : 0);
         outcome.damage = Math.round(rawDamage * (1 - defender.power * 0.004));
         outcome.blocked = rawDamage - outcome.damage;
         outcome.newHp = Math.max(0, defender.hp - outcome.damage);
+      }
+      if (!outcome.invalid) {
         outcome.knockdown = outcome.newHp === 0;
         if (outcome.knockdown) {
           outcome.getsUp = Math.random() < GET_UP_CHANCE / 2 ** defender.knockdowns;
@@ -1298,10 +1413,13 @@
         }
         // Solo es caída si no se levanta de la lona.
         outcome.ko = outcome.knockdown && !outcome.getsUp;
+        // Con tres jugadores la caída sigue hasta que solo queda uno en pie.
+        outcome.fallOver = outcome.ko && aliveIndexes().length === 2;
         outcome.extra = !outcome.knockdown && !isExtraTurn && Math.random() < 0.2;
       }
       pendingOutcome = outcome;
       strongAttack = false;
+      superAttack = false;
 
       // Las tarjetas vuelven a su tamaño y, cuando han crecido, llega el golpe.
       phase = "result";
@@ -1338,10 +1456,12 @@
       outcome.applied = true;
       const attacker = players[outcome.attacker];
       if (outcome.isStrong) attacker.power -= MIN_STRONG_POWER;
+      if (outcome.isSuper) attacker.superUsed = true;
       players[outcome.defender].hp = outcome.newHp;
       if (outcome.knockdown) players[outcome.defender].knockdowns++;
       if (outcome.ko) {
-        attacker.falls++;
+        players[outcome.defender].out = true;
+        if (outcome.fallOver) attacker.falls++;
         extraTurnPending = false;
       } else if (outcome.extra) {
         extraTurnPending = true;
@@ -1360,7 +1480,7 @@
         stamp.classList.add("show");
         return;
       }
-      attackerCard.classList.add("striking");
+      attackerCard.classList.add(outcome.isSuper ? "super-strike" : "striking");
       defenderCard.querySelector(".damage-pop").textContent = `-${outcome.damage}`;
       defenderCard.classList.add("damaged");
       if (outcome.knockdown) {
@@ -1407,14 +1527,18 @@
       const attacker = escapeHtml(players[outcome.attacker].label);
       const defender = escapeHtml(players[outcome.defender].label);
       const attack = escapeHtml(outcome.attack.name);
-      const lines = [`<strong>${attacker}</strong> utiliza ${outcome.isStrong ? "un <strong>GOLPE FUERTE</strong> con " : ""}<strong>${attack}</strong>.`];
+      const power = outcome.isSuper ? "un 🌟 <strong>SUPERGOLPE</strong> con " : outcome.isStrong ? "un <strong>GOLPE FUERTE</strong> con " : "";
+      const lines = [`<strong>${attacker}</strong> utiliza ${power}<strong>${attack}</strong>.`];
       if (outcome.invalid) {
         lines.push(`🚫 ¡El árbitro <strong>INVALIDA</strong> el ataque!${outcome.isStrong ? " El golpe fuerte gastó 30 de poder." : ""}`);
         return lines.join("<br>");
       }
-      lines.push(`${defender} bloquea ${outcome.blocked} y recibe <strong>${outcome.damage}</strong> de daño.`);
+      lines.push(outcome.isSuper
+        ? `¡Imposible bloquearlo! ${defender} recibe <strong>${outcome.damage}</strong> de daño.`
+        : `${defender} bloquea ${outcome.blocked} y recibe <strong>${outcome.damage}</strong> de daño.`);
       if (outcome.knockdown) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
       if (outcome.risen) lines.push(`🆙 <strong>¡${defender} SE LEVANTA</strong> con ${outcome.riseHp} de vida!`);
+      if (outcome.ko && !outcome.fallOver) lines.push(`❌ <strong>${defender} queda FUERA</strong> de esta caída.`);
       if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
       return lines.join("<br>");
     }
@@ -1429,12 +1553,14 @@
         `¡Atención! ¡${attack} de ${attacker}!`
       ])];
       if (outcome.isStrong) parts.push(pick(["¡Y es un golpe fuerte, con toda el alma!", "¡Golpe fuerte! ¡Saca toda la artillería!"]));
+      if (outcome.isSuper) parts.push(pick(["¡Es el supergolpe! ¡Lo tenía guardado para este momento!", "¡Supergolpe! ¡No hay quien pare eso!"]));
       if (outcome.invalid) {
         parts.push(pick(["¡Pero no! ¡El árbitro lo invalida! ¡Qué polémica!", `¡El árbitro dice que no! ¡${attack} no vale!`]));
         return parts.join(" ");
       }
       if (outcome.knockdown) {
         parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos!${outcome.getsUp ? "" : " ¡Tres!"}`);
+        if (outcome.ko && !outcome.fallOver) parts.push(`¡${defender} queda fuera de esta caída!`);
         return parts.join(" ");
       }
       if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
@@ -1453,31 +1579,44 @@
       stopNarration();
       applyOutcome(outcome);
       applyRise(outcome);
-      if (outcome.ko) {
+      if (outcome.fallOver) {
         showFallCelebration(outcome.attacker);
+        return;
+      }
+      if (outcome.ko) {
+        // Alguien quedó fuera, pero la caída sigue entre los que quedan en pie.
+        current = nextAlive(current);
+        isExtraTurn = false;
+        beginTurn("elimination");
         return;
       }
       if (extraTurnPending) {
         extraTurnPending = false;
         isExtraTurn = true;
       } else {
-        current = (current + 1) % players.length;
+        current = nextAlive(current);
         isExtraTurn = false;
       }
       beginTurn("turn");
+    }
+
+    function nextAlive(index) {
+      let next = (index + 1) % players.length;
+      while (players[next].out) next = (next + 1) % players.length;
+      return next;
     }
     $("#next-button").addEventListener("click", finishResult);
 
     /* ---------- Festejo de caída ---------- */
     function showFallCelebration(scorerIndex) {
       const scorer = players[scorerIndex];
-      const wonMatch = scorer.falls >= 2;
+      const wonMatch = scorer.falls >= fallsToWin;
       const overlay = $("#fall-celebration");
       $("#celebration-title").textContent = wonMatch ? "¡VICTORIA!" : "¡CAÍDA!";
       $("#champion-image").src = fighters[scorer.fighter].image;
       $("#champion-image").alt = fighters[scorer.fighter].name;
       $("#champion-name").textContent = scorer.label.toUpperCase();
-      $("#champion-falls").innerHTML = Array.from({ length: 2 }, (_, i) =>
+      $("#champion-falls").innerHTML = Array.from({ length: fallsToWin }, (_, i) =>
         i < scorer.falls ? `<span class="${i === scorer.falls - 1 ? "new" : ""}">●</span>` : "<span>○</span>"
       ).join("");
       $("#celebration-sub").textContent = wonMatch ? "¡GANA LA LUCHA!" : `¡SE LLEVA LA CAÍDA ${totalFalls()}!`;
@@ -1524,6 +1663,7 @@
         player.hp = 100;
         player.power = 100;
         player.knockdowns = 0;
+        player.out = false; // el supergolpe no se recupera: es uno por partida
       });
       current = starterIndex;
       extraTurnPending = false;
@@ -1541,6 +1681,11 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const canRecord = Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     const MAX_RECORD_SECONDS = 4;
+    // En el móvil el micrófono solo lo puede usar uno a la vez: si la página lo tiene abierto,
+    // el dictado no oye nada.
+    const isMobile = Boolean(navigator.userAgentData && navigator.userAgentData.mobile)
+      || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
     let recognition = null;
     let recorder = null;
     let micStream = null;
@@ -1620,6 +1765,12 @@
       if (micStream) micStream.getAudioTracks().forEach(track => { track.enabled = active; });
     }
 
+    // Cierra el flujo del micrófono; la próxima grabación lo vuelve a abrir.
+    function releaseMic() {
+      if (micStream) micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+    }
+
     function toggleDictation() {
       if (recognition) {
         recognition.stop();
@@ -1634,7 +1785,9 @@
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
       recognition.onresult = event => {
-        const text = [...event.results].map(result => result[0].transcript).join(" ").trim();
+        // Sin modo continuo solo cuenta el último resultado; en Android los anteriores
+        // repiten el mismo texto y juntarlos lo duplicaría.
+        const text = event.results[event.results.length - 1][0].transcript.trim();
         if (!text) return;
         heard = true;
         $("#free-attack").value = (text.charAt(0).toUpperCase() + text.slice(1)).slice(0, $("#free-attack").maxLength);
@@ -1642,6 +1795,8 @@
       };
       recognition.onerror = event => {
         failed = true;
+        // El micrófono estaba ocupado por la página: se libera para el próximo intento.
+        if (event.error === "audio-capture") releaseMic();
         setVoiceStatus(event.error === "not-allowed" || event.error === "service-not-allowed"
           ? "No hay permiso para usar el micrófono."
           : event.error === "no-speech" ? "No se oyó nada. Prueba otra vez." : "No se pudo escuchar. Prueba otra vez.");
@@ -1655,6 +1810,8 @@
       };
       // Los navegadores recientes aceptan la pista ya abierta y no vuelven a pedir permiso;
       // los antiguos ignoran el argumento y usan el micrófono por defecto.
+      // En el móvil se suelta el micrófono para que el dictado pueda usarlo.
+      if (isMobile) releaseMic();
       const track = micStream && micStream.getAudioTracks()[0];
       const liveTrack = track && track.readyState === "live" ? track : null;
       try {
@@ -1834,6 +1991,7 @@
       customAttacks = [];
       selectedAttack = null;
       strongAttack = false;
+      superAttack = false;
       selectedTarget = null;
       extraTurnPending = false;
       isExtraTurn = false;
