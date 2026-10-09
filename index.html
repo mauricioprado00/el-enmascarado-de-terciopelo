@@ -154,6 +154,7 @@
       transition: font-size .45s ease;
     }
     [data-phase="choose"] .vs { font-size: 1.8rem; }
+    [data-phase="meal"] .vs { display: none; }
     .fighter-card {
       position: relative;
       width: min(290px, 42vw);
@@ -303,6 +304,11 @@
     .card-stamp.guard { border-color: #35cfa0; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
     .fighter-card.blocked { border-color: #35cfa0; box-shadow: 0 0 30px #35cfa0aa; animation: wobble .6s; }
     .fighter-card.blocked .damage-pop { color: #35cfa0; animation: pop-up 1.6s ease-out forwards; }
+    .fighter-card.fed { border-color: #35cf57; box-shadow: 0 0 30px #35cf57aa; }
+    .fighter-card.fed .damage-pop { color: #35cf57; animation: pop-up 1.6s ease-out forwards; }
+    .fighter-card.unfed .fighter-image { filter: grayscale(.6); }
+    .fighter-card.unfed .damage-pop { color: #b9a6c2; animation: pop-up 1.6s ease-out forwards; }
+    .compact .damage-pop { top: 4px; font-size: 2.2rem; }
     .fighter-card.rising { border-color: #35cf57; box-shadow: 0 0 30px #35cf57aa; animation: rise .8s ease-out; }
     .fighter-card.rising .damage-pop { color: #35cf57; animation: pop-up 1.6s ease-out forwards; }
     @keyframes rise { 0% { transform: translateY(26px) rotate(6deg); filter: grayscale(1); } 60% { transform: translateY(-12px); } }
@@ -328,6 +334,7 @@
     .phase-panel { display: none; }
     [data-phase="intro"] #intro-panel,
     [data-phase="choose"] #choose-panel,
+    [data-phase="meal"] #meal-panel,
     [data-phase="result"] #result-panel { display: block; animation: panel-in .35s ease-out; }
     @keyframes panel-in { from { opacity: 0; transform: translateY(14px); } }
     .turn-title { margin: 0 0 8px; color: #ffd230; font-size: clamp(1.4rem, 5vw, 2.2rem); }
@@ -401,6 +408,47 @@
     .result-icon { flex: none; font-size: 3rem; animation: pulse 1s ease-in-out infinite alternate; }
     #message { font-family: Arial, sans-serif; font-size: 1.2rem; line-height: 1.45; }
     #next-button { margin-top: 14px; }
+
+    /* ---------- Momento de comer ---------- */
+    .foods { display: grid; max-width: 620px; margin: 0 auto 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .food {
+      display: flex;
+      min-height: 168px;
+      padding: 12px 6px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 3px solid transparent;
+      background: linear-gradient(145deg, #3f7a2c, #1d3a14);
+      box-shadow: 0 4px 0 #10240a;
+    }
+    .food:disabled { opacity: 1; cursor: default; }
+    .food.taken { border-color: #ffd230; }
+    .food-art { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: 3rem; line-height: 1; }
+    .food-name { font: bold 1rem Arial, sans-serif; }
+    .food-eater {
+      min-height: 1.5em;
+      max-width: 100%;
+      padding: 2px 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      color: #160a05;
+      font: bold .78rem Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: #ffd230;
+    }
+    .food-eater:empty { visibility: hidden; }
+    .food-eater.nobody { color: #fff; background: #4a2a58; }
+    .food-vitamins { color: #f3dcff; font: bold .9rem Arial, sans-serif; }
+    .food.revealed { animation: flip .6s ease-out; }
+    .food.vitamins { border-color: #35cf57; box-shadow: 0 4px 0 #10240a, 0 0 22px #35cf57; }
+    .food.vitamins .food-vitamins { color: #9dff8a; }
+    .food.empty { background: linear-gradient(145deg, #4b4150, #241c28); box-shadow: 0 4px 0 #120c14; }
+    .food.empty .food-art { filter: grayscale(.8); }
+    #meal-next { margin-top: 4px; }
+    @keyframes flip { 50% { transform: rotateY(90deg) scale(1.08); } }
     @keyframes pulse { to { transform: scale(1.15); } }
 
     /* ---------- Modal de ataque libre ---------- */
@@ -571,11 +619,17 @@
       .fighter-card,
       .fighter-card.compact,
       [data-phase="intro"].multi .fighter-card { width: calc(50vw - 50px); padding: 8px; }
+      /* a la mesa caben los tres en una fila */
+      [data-phase="meal"].multi .fighter-card { width: calc(33vw - 14px); }
       .fighter-card h3 { font-size: 1.05rem; }
       .card-details { font-size: .8rem; }
       .vs { font-size: 1.6rem; }
       .attacks { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
       .attack-btn { min-height: 78px; }
+      .foods { gap: 6px; }
+      .food { min-height: 140px; padding: 8px 4px; }
+      .food-art { font-size: 2.4rem; }
+      .food-name { font-size: .85rem; }
       .attack-go, .confirm-button { width: 100%; min-width: 0; }
       .result-icon { font-size: 2.2rem; }
       #message { font-size: 1.05rem; }
@@ -638,6 +692,13 @@
             <div class="power-help">Golpe fuerte: más daño por 30 de poder. Con más poder también recibes menos daño.<br>
               Supergolpe: solo una vez por partida. El árbitro no lo invalida y no se puede bloquear.<br>
               Defensa: 3 por partida. Te cubre del próximo golpe que recibas: casi siempre lo para o lo suaviza, pero a veces falla.</div>
+          </div>
+          <div id="meal-panel" class="phase-panel">
+            <div class="turn-title">🍽️ ¡HORA DE COMER!</div>
+            <p id="meal-line" class="intro-line"></p>
+            <p id="meal-help" class="target-help" aria-live="polite"></p>
+            <div id="foods" class="foods"></div>
+            <button id="meal-next" class="secondary" type="button">SEGUIR LA LUCHA ▶</button>
           </div>
           <div id="result-panel" class="phase-panel">
             <div class="result-box">
@@ -778,6 +839,55 @@
       return { guard: "failed", damage };
     }
 
+    // A veces, al empezar un turno, llega la comida. Nunca dos turnos seguidos.
+    const MEAL_CHANCE = 0.2;
+    const foods = [
+      ["🍭", "Chupa Chups", "el chupa chups"],
+      ["🍔", "Hamburguesa", "la hamburguesa"],
+      ["🥗", "Ensalada", "la ensalada"],
+      ["🥬", "Lechuga", "la lechuga"],
+      ["🍚", "Arroz", "el arroz"],
+      ["🍣", "Sushi", "el sushi"],
+      ["🍕", "Pizza", "la pizza"],
+      ["🌮", "Tacos", "los tacos"],
+      ["🍎", "Manzana", "la manzana"],
+      ["🥦", "Brócoli", "el brócoli"],
+      ["🥕", "Zanahoria", "la zanahoria"],
+      ["🍗", "Pollo asado", "el pollo asado"],
+      ["🍳", "Huevo frito", "el huevo frito"],
+      ["🍝", "Espaguetis", "los espaguetis"],
+      ["🍦", "Helado", "el helado"],
+      ["🍩", "Donut", "el donut"],
+      ["🍉", "Sandía", "la sandía"],
+      ["🍲", "Sopa", "la sopa"],
+      ["🧀", "Queso", "el queso"],
+      ["🍰", "Pastel", "el pastel"],
+      ["🍪", "Galletas", "las galletas"],
+      ["🍿", "Palomitas", "las palomitas"],
+      ["🍇", "Uvas", "las uvas"],
+      ["🍫", "Chocolate", "el chocolate"],
+      ["🥑", "Aguacate", "el aguacate"]
+    ].map(([icon, name, the]) => ({ icon, name, the, plural: /^l[oa]s /.test(the) }));
+
+    function shuffled(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // Tres platos al azar. Las vitaminas no dependen del plato: siempre hay alguno con vitaminas,
+    // a veces uno, a veces dos y a veces los tres, cada uno con entre 10 y 40.
+    function makeMenu() {
+      const menu = shuffled(foods).slice(0, 3).map(food => ({ ...food, vitamins: 0 }));
+      shuffled(menu).slice(0, pick([1, 2, 2, 3])).forEach(food => {
+        food.vitamins = 10 + 5 * Math.floor(Math.random() * 7);
+      });
+      return menu;
+    }
+
     let players = [];
     let current = 0;
     let phase = "intro";
@@ -792,6 +902,8 @@
     let extraTurnPending = false;
     let isExtraTurn = false;
     let pendingOutcome = null;
+    let meal = null;
+    let turnsSinceMeal = 0;
     let flowToken = 0;
     let setupChoices = [];
     let freeIcon = freeIcons[0];
@@ -809,7 +921,9 @@
     };
 
     /* ---------- Narrador ---------- */
-    const speech = { muted: false, voice: null };
+    // narrating: la narración que está sonando (0 si ninguna). queue: sus frases.
+    const speech = { muted: false, voice: null, narrating: 0, queue: [] };
+    let narrationCount = 0;
     let lastSpokenText = "";
     let lastSpokenAt = 0;
     try { speech.muted = localStorage.getItem("lucha-muted") === "1"; } catch (error) { /* sin almacenamiento */ }
@@ -855,6 +969,7 @@
     let activeClip = null;
 
     function stopNarration() {
+      speech.narrating = 0;
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       if (activeClip) {
         activeClip.pause();
@@ -888,8 +1003,9 @@
       });
     }
 
+    // Frases sueltas de los botones: nunca cortan al narrador.
     function say(text) {
-      if (!canSpeak()) return;
+      if (!canSpeak() || speech.narrating) return;
       const now = Date.now();
       if (text === lastSpokenText && now - lastSpokenAt < 500) return;
       lastSpokenText = text;
@@ -899,35 +1015,52 @@
     }
 
     // Narra frase a frase y resuelve al terminar (o tras un tiempo de lectura si no hay voz).
+    // Con voz, el temporizador de reserva solo salta si el narrador se atasca en una frase:
+    // se rearma al empezar cada una, así que una narración larga no se corta a medias.
     function narrate(text) {
       const lines = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-      const readingTime = Math.min(9000, Math.max(1800, text.length * 65));
+      const readingTime = chars => Math.min(9000, Math.max(1800, chars * 65));
+      const stallTime = line => readingTime(line.length) * 2.5 + 2000;
       return new Promise(resolve => {
+        const id = ++narrationCount;
         let finished = false;
+        let fallback = null;
         const finish = () => {
           if (finished) return;
           finished = true;
           clearTimeout(fallback);
+          if (speech.narrating === id) speech.narrating = 0;
           resolve();
         };
-        const fallback = setTimeout(finish, canSpeak() ? readingTime * 2.5 + 2000 : readingTime);
-        if (!canSpeak()) return;
+        const watch = ms => {
+          clearTimeout(fallback);
+          fallback = setTimeout(finish, ms);
+        };
+        if (!canSpeak() || !lines.length) {
+          watch(readingTime(text.length));
+          return;
+        }
         stopNarration();
-        lines.forEach((line, i) => {
+        speech.narrating = id;
+        // Se guardan las frases: si Chrome las libera antes de tiempo, no avisa al terminar.
+        speech.queue = lines.map((line, i) => {
           const utterance = makeUtterance(line);
+          utterance.onstart = () => watch(stallTime(line));
           if (i === lines.length - 1) {
             utterance.onend = finish;
             utterance.onerror = finish;
           }
           window.speechSynthesis.speak(utterance);
+          return utterance;
         });
+        watch(stallTime(lines[0]));
       });
     }
 
-    // Los botones deshabilitados o bloqueados no suenan.
+    // Los botones deshabilitados o bloqueados no suenan, ni ninguno mientras habla el narrador.
     function soundOnHover(button, play) {
       const sound = () => {
-        if (button.disabled || locked) return;
+        if (button.disabled || locked || speech.narrating) return;
         play();
       };
       button.addEventListener("mouseenter", sound);
@@ -1065,6 +1198,8 @@
       customAttacks = [];
       extraTurnPending = false;
       isExtraTurn = false;
+      meal = null;
+      turnsSinceMeal = 0;
       buildCards();
       show("game-screen");
       beginTurn("start");
@@ -1182,12 +1317,14 @@
         const isAttacker = i === current;
         const isDefender = i === selectedTarget;
         const isOption = phase === "intro" && multi && !isAttacker && !isOut;
+        // Mientras se come, se ven en pequeño todos los que siguen en pie y se destaca a quien elige.
+        const inMeal = phase === "meal";
         card.classList.toggle("out", isOut);
-        card.classList.toggle("attacker", isAttacker);
+        card.classList.toggle("attacker", inMeal ? i === mealChooser() : isAttacker);
         card.classList.toggle("defender", isDefender);
         card.classList.toggle("option", isOption);
-        card.classList.toggle("benched", phase !== "intro" && !isAttacker && !isDefender);
-        card.classList.toggle("compact", phase === "choose");
+        card.classList.toggle("benched", inMeal ? isOut : phase !== "intro" && !isAttacker && !isDefender);
+        card.classList.toggle("compact", phase === "choose" || inMeal);
         card.style.order = isAttacker ? 0 : 2 + i;
         if (isOption) {
           card.setAttribute("role", "button");
@@ -1198,16 +1335,18 @@
           card.removeAttribute("tabindex");
           card.removeAttribute("aria-pressed");
         }
-        card.querySelector(".card-badge").textContent = isAttacker
-          ? (isExtraTurn ? "⭐ TURNO EXTRA" : "⚔️ ATACA")
-          : isDefender ? "🎯 OBJETIVO" : isOption ? "ELEGIR" : isOut ? "❌ FUERA" : "";
+        card.querySelector(".card-badge").textContent = inMeal && !isOut
+          ? mealBadge(i)
+          : isAttacker
+            ? (isExtraTurn ? "⭐ TURNO EXTRA" : "⚔️ ATACA")
+            : isDefender ? "🎯 OBJETIVO" : isOption ? "ELEGIR" : isOut ? "❌ FUERA" : "";
         updateBars(i);
       });
     }
 
     function clearEffects() {
       document.querySelectorAll(".fighter-card").forEach(card => {
-        card.classList.remove("damaged", "ko", "striking", "super-strike", "fumbled", "rising", "blocked");
+        card.classList.remove("damaged", "ko", "striking", "super-strike", "fumbled", "rising", "blocked", "fed", "unfed");
         card.querySelector(".card-stamp").classList.remove("show", "up", "guard");
       });
     }
@@ -1244,6 +1383,7 @@
         : `Vas a atacar a ${players[selectedTarget].label}.`;
       $("#confirm-matchup").disabled = locked || selectedTarget === null;
       if (phase === "choose") updateChoosePanel();
+      if (phase === "meal") updateMeal();
     }
 
     function beginTurn(kind) {
@@ -1254,6 +1394,7 @@
       superAttack = false;
       defenseMode = false;
       pendingOutcome = null;
+      turnsSinceMeal++;
       const opponents = aliveIndexes().filter(i => i !== current);
       selectedTarget = opponents.length === 1 ? opponents[0] : null;
       clearEffects();
@@ -1285,6 +1426,11 @@
         line = pick([
           `¡Arranca la caída número ${totalFalls() + 1}! Todos recuperan fuerzas y empieza ${name}.`,
           `¡Nueva caída, señoras y señores! ${name} sale a comerse el ring.`
+        ]);
+      } else if (kind === "meal") {
+        line = pick([
+          `¡Con la barriga llena, vuelve la lucha! Le toca a ${name}.`,
+          `¡Se acabó el recreo! ${name}, ¡al ataque!`
         ]);
       } else if (isExtraTurn) {
         line = multi
@@ -1712,7 +1858,8 @@
         current = nextAlive(current);
         isExtraTurn = false;
       }
-      beginTurn("turn");
+      if (mealTime()) startMeal();
+      else beginTurn("turn");
     }
 
     function nextAlive(index) {
@@ -1721,6 +1868,193 @@
       return next;
     }
     $("#next-button").addEventListener("click", finishResult);
+
+    /* ---------- Momento de comer ---------- */
+    // Turno doble no; y solo si alguien tiene algo que recuperar.
+    function mealTime() {
+      return !isExtraTurn && turnsSinceMeal >= 2 && Math.random() < MEAL_CHANCE
+        && aliveIndexes().some(i => players[i].hp < 100);
+    }
+
+    // Elige primero quien va a golpear y luego los demás en orden de turno.
+    const mealChooser = () => meal.order[meal.picks.length];
+    const pickOf = player => meal.picks.find(item => item.player === player);
+    const eaterOf = foodIndex => meal.picks.find(item => item.food === foodIndex);
+    const capitalize = text => text.charAt(0).toUpperCase() + text.slice(1);
+
+    function startMeal() {
+      phase = "meal";
+      locked = false;
+      selectedTarget = null;
+      turnsSinceMeal = 0;
+      const order = [current];
+      while (order.length < aliveIndexes().length) order.push(nextAlive(order[order.length - 1]));
+      meal = { menu: makeMenu(), order, picks: [], stage: "pick", applied: false };
+      $("#foods").innerHTML = meal.menu.map((food, i) => `
+        <button type="button" class="food" data-food="${i}">
+          <span class="food-art">${food.icon}</span>
+          <span class="food-name">${food.name}</span>
+          <span class="food-eater"></span>
+          <span class="food-vitamins"></span>
+        </button>
+      `).join("");
+      document.querySelectorAll("[data-food]").forEach(button => {
+        const i = Number(button.dataset.food);
+        speakOnHover(button, () => meal.menu[i].name);
+        button.addEventListener("click", () => pickFood(i));
+      });
+      clearEffects();
+      updateStage();
+      const name = players[current].spoken;
+      const dishes = listNames(meal.menu.map(food => food.the));
+      const line = pick([
+        `¡Paren todo, que llega la comida! Hoy en el menú: ${dishes}. Unos platos tienen vitaminas y otros no. ¡Elige primero ${name}!`,
+        `¡Hora de comer, señoras y señores! Hay ${dishes}. ¿Cuál tendrá vitaminas? ¡Empieza eligiendo ${name}!`
+      ]);
+      mealSay(line);
+    }
+
+    // Lo que dice el narrador también queda escrito, por si el sonido está apagado.
+    function mealSay(text) {
+      $("#meal-line").textContent = `🎙️ ${text}`;
+      return narrate(text);
+    }
+
+    function mealBadge(i) {
+      const item = pickOf(i);
+      if (!item) return i === mealChooser() ? "🍽️ ELIGE" : "⏳ ESPERA";
+      const icon = meal.menu[item.food].icon;
+      return meal.stage === "reveal" ? `${icon} +${item.gain}` : `${icon} ¡A COMER!`;
+    }
+
+    function updateMeal() {
+      const revealed = meal.stage === "reveal";
+      document.querySelectorAll("[data-food]").forEach(button => {
+        const i = Number(button.dataset.food);
+        const food = meal.menu[i];
+        const eater = eaterOf(i);
+        button.disabled = locked || meal.stage !== "pick" || Boolean(eater);
+        button.classList.toggle("taken", Boolean(eater));
+        button.classList.toggle("revealed", revealed);
+        button.classList.toggle("vitamins", revealed && food.vitamins > 0);
+        button.classList.toggle("empty", revealed && !food.vitamins);
+        const tag = button.querySelector(".food-eater");
+        tag.textContent = eater ? players[eater.player].label : revealed ? "Nadie" : "";
+        tag.classList.toggle("nobody", !eater);
+        button.querySelector(".food-vitamins").textContent = !revealed
+          ? "❓ ¿VITAMINAS?"
+          : food.vitamins ? `💊 ${food.vitamins} VITAMINAS` : "❌ SIN VITAMINAS";
+      });
+      $("#meal-help").textContent = meal.stage === "pick"
+        ? `🍽️ Elige ${players[mealChooser()].label}: ¿qué plato tendrá vitaminas?`
+        : meal.stage === "suspense"
+          ? "🥁 ¿Quién ha comido vitaminas?…"
+          : meal.picks.map(item => item.gain
+            ? `💚 ${players[item.player].label} +${item.gain} de vida`
+            : `😖 ${players[item.player].label} no recupera nada`).join(" · ");
+      $("#meal-next").hidden = !revealed;
+    }
+
+    function pickFood(foodIndex) {
+      if (phase !== "meal" || locked || meal.stage !== "pick" || eaterOf(foodIndex)) return;
+      const player = mealChooser();
+      meal.picks.push({ player, food: foodIndex, gain: 0 });
+      const lines = [`¡${players[player].spoken} se pide ${meal.menu[foodIndex].the}!`];
+      // Al último en elegir le toca el único plato que queda.
+      const free = meal.menu.map((_, i) => i).filter(i => !eaterOf(i));
+      if (meal.picks.length === meal.order.length - 1 && free.length === 1) {
+        const last = mealChooser();
+        meal.picks.push({ player: last, food: free[0], gain: 0 });
+        lines.push(`A ${players[last].spoken} le queda ${meal.menu[free[0]].the}.`);
+      }
+      if (meal.picks.length < meal.order.length) {
+        lines.push(`Ahora elige ${players[mealChooser()].spoken}.`);
+        updateStage();
+        mealSay(lines.join(" "));
+        return;
+      }
+      revealMeal(lines);
+    }
+
+    // Cuando todos han elegido, se descubren a la vez las vitaminas de cada plato y se recupera la vida.
+    function revealMeal(lines) {
+      meal.stage = "suspense";
+      locked = true;
+      updateStage();
+      const token = ++flowToken;
+      lines.push(pick([
+        "¡Ya han elegido todos! ¿Qué platos tendrán vitaminas? ¡Lo vemos ya!",
+        "¡Llega el momento de la verdad! ¿Quién ha comido bien?"
+      ]));
+      mealSay(lines.join(" ")).then(() => {
+        if (token !== flowToken) return;
+        meal.stage = "reveal";
+        locked = false;
+        applyMeal();
+        playMealEffects();
+        updateStage();
+        return mealSay(mealNarration());
+      }).then(() => {
+        if (token !== flowToken) return;
+        setTimeout(() => { if (token === flowToken) finishMeal(); }, 1500);
+      });
+    }
+
+    function applyMeal() {
+      if (meal.applied) return;
+      meal.applied = true;
+      meal.picks.forEach(item => {
+        const player = players[item.player];
+        item.gain = Math.min(meal.menu[item.food].vitamins, 100 - player.hp);
+        player.hp += item.gain;
+        updateBars(item.player);
+      });
+    }
+
+    function playMealEffects() {
+      meal.picks.forEach(item => {
+        const card = cardOf(item.player);
+        card.querySelector(".damage-pop").textContent = `+${item.gain}`;
+        card.classList.add(item.gain > 0 ? "fed" : "unfed");
+      });
+    }
+
+    function mealNarration() {
+      const parts = meal.picks.map(item => {
+        const food = meal.menu[item.food];
+        const name = players[item.player].spoken;
+        const dish = capitalize(food.the);
+        const had = food.plural ? "tenían" : "tenía";
+        if (!food.vitamins) {
+          return pick([`¡${dish} no ${had} ni una vitamina! ${name} se queda como estaba.`, `¡Uy! ¡${dish}, sin vitaminas! ${name} no recupera nada.`]);
+        }
+        if (!item.gain) return `¡${dish} ${had} ${food.vitamins} vitaminas, pero ${name} ya estaba a tope!`;
+        if (item.gain < food.vitamins) return `¡${dish} ${had} ${food.vitamins} vitaminas! ${name} recupera ${item.gain} y queda a tope.`;
+        return pick([
+          `¡${dish} ${had} ${food.vitamins} vitaminas! ${name} recupera ${item.gain} de vida.`,
+          `¡Premio! ¡${dish} ${had} ${food.vitamins} vitaminas y ${name} recupera ${item.gain}!`
+        ]);
+      });
+      // Con dos jugadores sobra un plato.
+      const leftover = meal.menu.find((_, i) => !eaterOf(i));
+      if (leftover) {
+        const had = leftover.plural ? "tenían" : "tenía";
+        parts.push(leftover.vitamins
+          ? `Y ${leftover.the}, que nadie eligió, ${had} ${leftover.vitamins} vitaminas. ¡Qué pena!`
+          : `Y ${leftover.the}, que nadie eligió, no ${had} vitaminas. ¡Bien esquivado!`);
+      }
+      return parts.join(" ");
+    }
+
+    function finishMeal() {
+      if (phase !== "meal" || !meal || meal.stage !== "reveal") return;
+      flowToken++;
+      stopNarration();
+      applyMeal();
+      meal = null;
+      beginTurn("meal");
+    }
+    $("#meal-next").addEventListener("click", finishMeal);
 
     /* ---------- Festejo de caída ---------- */
     function showFallCelebration(scorerIndex) {
@@ -2114,6 +2448,7 @@
       extraTurnPending = false;
       isExtraTurn = false;
       pendingOutcome = null;
+      meal = null;
       celebrationAction = null;
       $("#fall-celebration").classList.remove("open");
       show("start-screen");
