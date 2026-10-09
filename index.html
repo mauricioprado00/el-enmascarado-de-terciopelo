@@ -602,6 +602,54 @@
     @keyframes dot-pop { 0% { transform: scale(0); } 60% { transform: scale(1.8); } }
     @keyframes confetti-fall { to { transform: translateY(125vh) rotate(720deg); } }
 
+    /* ---------- Ánimo del público ---------- */
+    .cheer-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      padding: 16px;
+      place-items: center;
+      visibility: hidden;
+      opacity: 0;
+      background: radial-gradient(circle, #3b124df2, #08030cfa 70%);
+      transition: opacity .3s, visibility .3s;
+      z-index: 15;
+    }
+    .cheer-overlay.open { visibility: visible; opacity: 1; }
+    .cheer-panel { display: flex; width: min(440px, 100%); max-height: 100%; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; }
+    .cheer-title { color: #ffd230; font-size: clamp(1.6rem, 7vw, 2.6rem); line-height: 1.1; text-shadow: 3px 3px #d9263f; }
+    .cheer-image {
+      width: min(170px, 40vw);
+      aspect-ratio: 320 / 420;
+      border: 4px solid #755381;
+      border-radius: 14px;
+      object-fit: cover;
+      object-position: center 12%;
+      filter: grayscale(1) brightness(.7);
+      transform: rotate(-8deg) translateY(10px);
+      transition: filter .3s, border-color .3s, box-shadow .3s, transform .6s ease-in;
+    }
+    .cheer-overlay.loud .cheer-image { filter: grayscale(.3); border-color: #ff9d24; animation: struggle .45s ease-in-out infinite alternate; }
+    .cheer-overlay.over .cheer-image { filter: none; border-color: #35cf57; box-shadow: 0 0 30px #35cf57; }
+    .cheer-overlay.risen .cheer-image { filter: none; border-color: #35cf57; box-shadow: 0 0 40px #35cf57; transform: none; animation: rise .8s ease-out; }
+    .cheer-overlay.down .cheer-image { filter: grayscale(1) brightness(.5); transform: rotate(-24deg) translateY(30px); }
+    .cheer-name { font-size: clamp(1.1rem, 4.5vw, 1.5rem); }
+    .crowd { display: flex; gap: 6px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: 2rem; }
+    .crowd span { display: inline-block; opacity: .4; transition: opacity .2s; }
+    .cheer-overlay.loud .crowd span { opacity: 1; animation: crowd-jump .3s ease-in-out infinite alternate; }
+    .cheer-overlay.loud .crowd span:nth-child(2n) { animation-delay: -.15s; }
+    .cheer-meter { position: relative; width: 100%; height: 30px; overflow: hidden; border: 3px solid #fff; border-radius: 10px; background: #310a11; }
+    .cheer-fill { width: 0; height: 100%; background: linear-gradient(90deg, #ff3b30, #ff9d24); transition: width .12s linear; }
+    .cheer-overlay.over .cheer-fill { background: linear-gradient(90deg, #35cf57, #bdf537); }
+    .cheer-mark { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: #fff; box-shadow: 0 0 8px #fff; }
+    .cheer-status { min-height: 1.4em; color: #f3dcff; font: bold 1.1rem Arial, sans-serif; }
+    .cheer-overlay.loud .cheer-status, .cheer-overlay.over .cheer-status { color: #9dff8a; }
+    .cheer-count { min-height: 1.1em; color: #ffd230; font-size: clamp(2rem, 9vw, 3rem); line-height: 1; }
+    #cheer-button { min-width: 220px; font-size: 1.4rem; }
+    .cheer-mic { min-height: 1.2em; color: #a9dfff; font: .85rem Arial, sans-serif; }
+    @keyframes struggle { from { transform: rotate(-8deg) translateY(10px); } to { transform: rotate(4deg) translateY(-4px); } }
+    @keyframes crowd-jump { to { transform: translateY(-10px) scale(1.2); } }
+
     #winner-screen h2 { font-size: clamp(2.5rem, 10vw, 5rem); }
     .winner-image {
       width: min(240px, 60vw);
@@ -752,6 +800,23 @@
     </div>
   </div>
 
+  <div id="cheer" class="cheer-overlay" role="dialog" aria-modal="true" aria-labelledby="cheer-title">
+    <div class="cheer-panel">
+      <div id="cheer-title" class="cheer-title">📣 ¡ÁNIMO, PÚBLICO!</div>
+      <img id="cheer-image" class="cheer-image" alt="">
+      <div id="cheer-name" class="cheer-name"></div>
+      <div class="crowd" aria-hidden="true"><span>🙌</span><span>📣</span><span>👏</span><span>🙌</span><span>📣</span><span>👏</span></div>
+      <div class="cheer-meter" role="meter" aria-label="Ruido del público" aria-valuemin="0" aria-valuemax="100">
+        <div id="cheer-fill" class="cheer-fill"></div>
+        <div id="cheer-mark" class="cheer-mark"></div>
+      </div>
+      <div id="cheer-status" class="cheer-status" aria-live="polite"></div>
+      <div id="cheer-count" class="cheer-count" aria-live="assertive"></div>
+      <button id="cheer-button" type="button">👏 ¡ÁNIMO!</button>
+      <div id="cheer-mic" class="cheer-mic"></div>
+    </div>
+  </div>
+
   <div id="fall-celebration" class="fall-celebration" aria-live="assertive">
     <div class="rays"></div>
     <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
@@ -814,8 +879,13 @@
       "🐍", "🦈", "🐉", "🦍", "🐻", "🦂", "🦖", "🐯", "💀", "👑", "🚀", "✨"
     ];
     const MIN_STRONG_POWER = 30;
-    // Probabilidad de levantarse de la lona; se reduce a la mitad con cada nueva caída a la lona en la misma caída.
-    const GET_UP_CHANCE = 0.35;
+    // Ánimo del público: cuando alguien cae a la lona, el micrófono (o el botón de ánimo) llena un
+    // medidor mientras el árbitro cuenta. Solo si pasa la raya puede levantarse.
+    const CHEER_SECONDS = 6;
+    const CHEER_THRESHOLD = 0.6;
+    const CHEER_FLOOR = 0.25; // por debajo de este volumen es ruido de fondo y no cuenta
+    const CHEER_GAIN = 0.4;   // gritando fuerte, la raya se pasa en unos dos o tres segundos
+    const CHEER_TAP = 0.04;   // cada toque del botón
 
     // Vida al levantarse: log-uniforme entre 1 y 100. Cualquier valor es posible, pero la mitad
     // de las veces es 10 o menos, tres de cada cuatro no pasa de 32 y un 100 sale una vez cada mil.
@@ -1085,6 +1155,7 @@
     /* ---------- Inicio y elección de luchadores ---------- */
     $("#start-button").addEventListener("click", () => {
       show("count-screen");
+      wakeAudio();
       // Se pide el micrófono aquí, una sola vez, para no preguntar en cada grabación.
       // En el móvil no: tenerlo abierto bloquea el dictado.
       if (!isMobile) ensureMic().catch(() => { /* sin permiso: la grabación lo volverá a pedir */ });
@@ -1585,7 +1656,10 @@
       defenseMode = !defenseMode;
       updateChoosePanel();
     });
-    $("#attack-button").addEventListener("click", performAttack);
+    $("#attack-button").addEventListener("click", () => {
+      wakeAudio();
+      performAttack();
+    });
 
     function performAttack() {
       const attack = currentAttacks.find(item => item.name === selectedAttack);
@@ -1609,12 +1683,17 @@
         guard: null,
         newHp: defender.hp,
         knockdown: false,
+        riseFactor: 1,
+        cheer: 0,
+        loudEnough: false,
+        decided: false,
         getsUp: false,
         riseHp: 0,
         ko: false,
         fallOver: false,
         extra: false,
         applied: false,
+        koApplied: false,
         risen: false,
         finished: false
       };
@@ -1633,14 +1712,8 @@
       }
       if (!outcome.invalid) {
         outcome.knockdown = outcome.newHp === 0;
-        if (outcome.knockdown) {
-          outcome.getsUp = Math.random() < GET_UP_CHANCE / 2 ** defender.knockdowns;
-          if (outcome.getsUp) outcome.riseHp = getUpHp();
-        }
-        // Solo es caída si no se levanta de la lona.
-        outcome.ko = outcome.knockdown && !outcome.getsUp;
-        // Con tres jugadores la caída sigue hasta que solo queda uno en pie.
-        outcome.fallOver = outcome.ko && aliveIndexes().length === 2;
+        // Si se levanta lo decide el público (decideRise); cada caída a la lona en la misma caída lo pone más difícil.
+        outcome.riseFactor = 1 / 2 ** defender.knockdowns;
         // Un golpe parado entero no da turno doble.
         outcome.extra = !outcome.knockdown && outcome.guard !== "blocked" && !isExtraTurn && Math.random() < 0.2;
       }
@@ -1661,17 +1734,13 @@
         applyOutcome(outcome);
         playHitEffects(outcome);
         $("#message").innerHTML = resultHtml(outcome);
-        $("#next-button").disabled = false;
+        // Desde la lona no se puede pasar de turno hasta que el público haya tenido su oportunidad.
+        $("#next-button").disabled = outcome.knockdown;
         // Si el ataque libre tiene grito grabado, suena antes que el comentarista.
         playClip(outcome.attack.sound).then(() => {
           if (token === flowToken) return narrate(resultNarration(outcome));
         }).then(() => {
-          // La cuenta se corta en el dos: se levanta.
-          if (token !== flowToken || !outcome.getsUp) return;
-          applyRise(outcome);
-          playRiseEffects(outcome);
-          $("#message").innerHTML = resultHtml(outcome);
-          return narrate(riseNarration(outcome));
+          if (token === flowToken && outcome.knockdown) return crowdChance(outcome, token);
         }).then(() => {
           if (token !== flowToken) return;
           setTimeout(() => { if (token === flowToken) finishResult(); }, outcome.ko ? 500 : 1000);
@@ -1693,13 +1762,33 @@
       if (outcome.guard) players[outcome.defender].guard = false;
       players[outcome.defender].hp = outcome.newHp;
       if (outcome.knockdown) players[outcome.defender].knockdowns++;
-      if (outcome.ko) {
-        players[outcome.defender].out = true;
-        if (outcome.fallOver) attacker.falls++;
-        extraTurnPending = false;
-      } else if (outcome.extra) {
-        extraTurnPending = true;
-      }
+      if (outcome.extra) extraTurnPending = true;
+      updateBars(outcome.attacker);
+      updateBars(outcome.defender);
+    }
+
+    // Con el medidor por encima de la raya puede levantarse: un 40 % justo en la raya y un 75 % con el
+    // medidor lleno, la mitad por cada caída a la lona anterior en la misma caída. Sin pasar la raya, no.
+    function decideRise(outcome) {
+      if (outcome.decided) return;
+      outcome.decided = true;
+      outcome.loudEnough = outcome.cheer >= CHEER_THRESHOLD;
+      const chance = outcome.loudEnough
+        ? (0.4 + 0.35 * (outcome.cheer - CHEER_THRESHOLD) / (1 - CHEER_THRESHOLD)) * outcome.riseFactor
+        : 0;
+      outcome.getsUp = Math.random() < chance;
+      if (outcome.getsUp) outcome.riseHp = getUpHp();
+      outcome.ko = !outcome.getsUp;
+      // Con tres jugadores la caída sigue hasta que solo queda uno en pie.
+      outcome.fallOver = outcome.ko && aliveIndexes().length === 2;
+    }
+
+    function applyKnockout(outcome) {
+      if (!outcome.ko || outcome.koApplied) return;
+      outcome.koApplied = true;
+      players[outcome.defender].out = true;
+      if (outcome.fallOver) players[outcome.attacker].falls++;
+      extraTurnPending = false;
       updateBars(outcome.attacker);
       updateBars(outcome.defender);
     }
@@ -1752,17 +1841,28 @@
       card.classList.add("rising");
     }
 
+    // La cuenta del árbitro se corta en el dos: se levanta.
     function riseNarration(outcome) {
       const defender = players[outcome.defender].spoken;
       const hp = outcome.riseHp;
+      const lift = pick([
+        `¡Uno! ¡Dos! ¡Y con el aliento del público, ${defender} se levanta!`,
+        `¡Uno! ¡Dos! ¡El público le da fuerzas y ${defender} vuelve a ponerse de pie!`
+      ]);
       if (hp <= 10) {
-        return pick([
-          `¡Pero se levanta! ${defender} vuelve con solo ${hp} de vida. ¡Apenas se tiene en pie!`,
-          `¡No, no, se levanta! ${defender} sigue en la pelea de milagro, con ${hp} de vida.`
-        ]);
+        return `${lift} ${pick([`¡Vuelve con solo ${hp} de vida! ¡Apenas se tiene en pie!`, `¡Sigue en la pelea de milagro, con ${hp} de vida!`])}`;
       }
-      if (hp < 40) return `¡Se levanta! ¡${defender} vuelve a la pelea con ${hp} de vida!`;
-      return `¡Increíble! ¡${defender} se levanta como nuevo, con ${hp} de vida! ¡Qué resistencia!`;
+      if (hp < 40) return `${lift} ¡Vuelve a la pelea con ${hp} de vida!`;
+      return `${lift} ¡Y como nuevo, con ${hp} de vida! ¡Qué resistencia!`;
+    }
+
+    function knockoutNarration(outcome) {
+      const defender = players[outcome.defender].spoken;
+      const parts = ["¡Uno! ¡Dos! ¡Tres!", outcome.loudEnough
+        ? `¡El público lo intentó, pero ${defender} no puede más!`
+        : `El público no hizo suficiente ruido y ${defender} se queda en la lona.`];
+      if (!outcome.fallOver) parts.push(`¡${defender} queda fuera de esta caída!`);
+      return parts.join(" ");
     }
 
     function resultHtml(outcome) {
@@ -1785,6 +1885,10 @@
           ? `¡Imposible bloquearlo! ${defender} recibe ${damage}.`
           : `${defender} bloquea ${outcome.blocked} y recibe ${damage}.`));
         if (outcome.knockdown) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
+        if (outcome.decided) {
+          lines.push(outcome.getsUp ? "📣 ¡El público le da fuerzas!"
+            : outcome.loudEnough ? "📣 El público lo intentó, pero no bastó." : "🤫 El público no hizo suficiente ruido.");
+        }
         if (outcome.risen) lines.push(`🆙 <strong>¡${defender} SE LEVANTA</strong> con ${outcome.riseHp} de vida!`);
         if (outcome.ko && !outcome.fallOver) lines.push(`❌ <strong>${defender} queda FUERA</strong> de esta caída.`);
         if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
@@ -1817,8 +1921,7 @@
           parts.push(pick([`¡El supergolpe rompe la defensa de ${defender}!`, `¡Ni la defensa de ${defender} puede con eso!`]));
         }
         if (outcome.knockdown) {
-          parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos!${outcome.getsUp ? "" : " ¡Tres!"}`);
-          if (outcome.ko && !outcome.fallOver) parts.push(`¡${defender} queda fuera de esta caída!`);
+          parts.push(`¡${defender} se queda en la lona!`);
         } else if (outcome.guard !== "blocked") {
           if (outcome.guard === "softened") parts.push(`Solo recibe ${outcome.damage} de daño.`);
           else if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
@@ -1838,7 +1941,12 @@
       outcome.finished = true;
       flowToken++;
       stopNarration();
+      closeCheer();
       applyOutcome(outcome);
+      if (outcome.knockdown) {
+        decideRise(outcome);
+        applyKnockout(outcome);
+      }
       applyRise(outcome);
       if (outcome.fallOver) {
         showFallCelebration(outcome.attacker);
@@ -2055,6 +2163,184 @@
       beginTurn("meal");
     }
     $("#meal-next").addEventListener("click", finishMeal);
+
+    /* ---------- Ánimo del público ---------- */
+    let audioContext = null;
+    let cheer = null;
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    $("#cheer-mark").style.left = `${CHEER_THRESHOLD * 100}%`;
+
+    // El navegador solo deja arrancar el audio tras un toque o clic, así que se despierta en ellos.
+    function wakeAudio() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return null;
+      if (!audioContext) audioContext = new AudioContext();
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => { /* sigue dormido */ });
+      return audioContext;
+    }
+
+    // Mide el volumen del micrófono de 0 (silencio, -50 dB) a 1 (a gritos, -10 dB).
+    // Resuelve con null si no hay micrófono o no hay permiso: entonces solo cuenta el botón.
+    async function openCrowdMic() {
+      const context = wakeAudio();
+      if (!context) return null;
+      let stream;
+      try {
+        stream = await ensureMic();
+      } catch (error) {
+        return null;
+      }
+      setMicActive(true);
+      const source = context.createMediaStreamSource(stream);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      const samples = new Float32Array(analyser.fftSize);
+      return {
+        level() {
+          analyser.getFloatTimeDomainData(samples);
+          let sum = 0;
+          for (const sample of samples) sum += sample * sample;
+          const db = 10 * Math.log10(sum / samples.length + 1e-10);
+          return Math.min(1, Math.max(0, (db + 50) / 40));
+        },
+        stop() {
+          source.disconnect();
+          setMicActive(false);
+          // En el móvil se suelta para no bloquear el dictado.
+          if (isMobile) releaseMic();
+        }
+      };
+    }
+
+    // Caído en la lona: el público anima, el árbitro cuenta y se decide si se levanta.
+    async function crowdChance(outcome, token) {
+      openCheer(outcome);
+      const name = players[outcome.defender].spoken;
+      const call = pick([
+        `¡Público, es su momento! ¡Griten y aplaudan para levantar a ${name}!`,
+        `¡Vamos, afición! ¡Hagan ruido, que ${name} necesita su aliento!`
+      ]);
+      // El micrófono no cuenta mientras habla el narrador, para no oírse a sí mismo.
+      await (canSpeak() ? narrate(call) : wait(1500));
+      if (token !== flowToken) return;
+      outcome.cheer = await listenToCrowd(token);
+      if (token !== flowToken) return;
+      decideRise(outcome);
+      showCheerResult(outcome);
+      const spoken = narrate(outcome.getsUp ? riseNarration(outcome) : knockoutNarration(outcome));
+      await wait(1800);
+      if (token !== flowToken) return;
+      closeCheer();
+      applyKnockout(outcome);
+      if (outcome.getsUp) {
+        applyRise(outcome);
+        playRiseEffects(outcome);
+      }
+      $("#message").innerHTML = resultHtml(outcome);
+      $("#next-button").disabled = false;
+      await spoken;
+    }
+
+    function openCheer(outcome) {
+      const fallen = players[outcome.defender];
+      cheer = { meter: 0, boost: 0, loud: false, elapsed: 0, listening: false, mic: null, micFailed: false, timer: null, done: false };
+      const state = cheer;
+      $("#cheer-image").src = fighters[fallen.fighter].image;
+      $("#cheer-image").alt = fighters[fallen.fighter].name;
+      $("#cheer-name").textContent = `¡Ayuden a ${fallen.label.toUpperCase()} a levantarse!`;
+      $("#cheer").classList.remove("loud", "over", "risen", "down");
+      $("#cheer").classList.add("open");
+      renderCheer();
+      openCrowdMic().then(mic => {
+        if (state.done) {
+          if (mic) mic.stop();
+          return;
+        }
+        state.mic = mic;
+        state.micFailed = !mic;
+        renderCheer();
+      });
+    }
+
+    // Escucha durante la cuenta del árbitro; resuelve con lo lleno que quedó el medidor (0 a 1).
+    function listenToCrowd(token) {
+      const state = cheer;
+      state.listening = true;
+      $("#cheer-button").disabled = false;
+      $("#cheer-button").focus();
+      return new Promise(resolve => {
+        const started = performance.now();
+        let last = started;
+        state.timer = setInterval(() => {
+          const now = performance.now();
+          const seconds = Math.min(0.25, (now - last) / 1000);
+          last = now;
+          const level = state.mic ? state.mic.level() : 0;
+          state.meter = Math.min(1, state.meter + Math.max(0, level - CHEER_FLOOR) * CHEER_GAIN * seconds);
+          state.boost = Math.max(0, state.boost - seconds);
+          state.loud = level > CHEER_FLOOR + 0.1 || state.boost > 0;
+          state.elapsed = (now - started) / 1000;
+          renderCheer();
+          if (token !== flowToken || state.done || state.elapsed >= CHEER_SECONDS || state.meter >= 1) {
+            clearInterval(state.timer);
+            state.listening = false;
+            resolve(state.meter);
+          }
+        }, 50);
+      });
+    }
+
+    function renderCheer() {
+      const state = cheer;
+      if (!state) return;
+      const over = state.meter >= CHEER_THRESHOLD;
+      const percent = Math.round(state.meter * 100);
+      $("#cheer").classList.toggle("loud", state.listening && state.loud);
+      $("#cheer").classList.toggle("over", over);
+      $("#cheer-fill").style.width = `${percent}%`;
+      document.querySelector(".cheer-meter").setAttribute("aria-valuenow", String(percent));
+      $("#cheer-status").textContent = !state.listening
+        ? "🎙️ ¡Preparados…!"
+        : over ? "✅ ¡Pasaron la raya! ¡Ya puede levantarse!"
+          : state.loud ? "📣 ¡ESO ES! ¡MÁS FUERTE!" : "🤫 ¡Griten y aplaudan hasta pasar la raya!";
+      $("#cheer-count").textContent = state.listening ? ["", "UNO…", "DOS…"][Math.min(2, Math.floor(state.elapsed / 2))] : "";
+      $("#cheer-button").disabled = !state.listening;
+      $("#cheer-mic").textContent = state.mic
+        ? "🎤 El micrófono está escuchando al público."
+        : state.micFailed ? "👆 Sin micrófono: ¡toquen el botón sin parar!" : "";
+    }
+
+    function showCheerResult(outcome) {
+      if (cheer.mic) {
+        cheer.mic.stop();
+        cheer.mic = null;
+      }
+      renderCheer();
+      $("#cheer").classList.add(outcome.getsUp ? "risen" : "down");
+      $("#cheer-count").textContent = outcome.getsUp ? "¡ARRIBA! 🆙" : "¡TRES! ❌";
+      $("#cheer-status").textContent = outcome.getsUp
+        ? "📣 ¡El público le da fuerzas!"
+        : outcome.loudEnough ? "😢 Lo intentaron, pero no puede más…" : "🤫 No hubo suficiente ruido…";
+    }
+
+    function closeCheer() {
+      if (!cheer) return;
+      cheer.done = true;
+      clearInterval(cheer.timer);
+      if (cheer.mic) cheer.mic.stop();
+      cheer = null;
+      $("#cheer").classList.remove("open");
+    }
+
+    $("#cheer-button").addEventListener("click", () => {
+      if (!cheer || !cheer.listening) return;
+      wakeAudio();
+      cheer.meter = Math.min(1, cheer.meter + CHEER_TAP);
+      cheer.boost = 0.35; // segundos que se ve al público animando
+      cheer.loud = true;
+      renderCheer();
+    });
 
     /* ---------- Festejo de caída ---------- */
     function showFallCelebration(scorerIndex) {
@@ -2450,6 +2736,7 @@
       pendingOutcome = null;
       meal = null;
       celebrationAction = null;
+      closeCheer();
       $("#fall-celebration").classList.remove("open");
       show("start-screen");
     }
