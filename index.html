@@ -214,6 +214,24 @@
     }
     .super-chip.used { opacity: 0; transform: scale(0) rotate(30deg); animation: none; }
     .compact .super-chip { top: 3px; right: 3px; padding: 1px 5px; font-size: .65rem; }
+    /* En guardia: visible desde que activa la defensa hasta que recibe el siguiente golpe */
+    .guard-chip {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #04241c;
+      font: bold .75rem Arial, sans-serif;
+      background: linear-gradient(145deg, #c8fff0, #35cfa0);
+      box-shadow: 0 0 10px #35cfa0;
+      opacity: 0;
+      transform: scale(0);
+      transition: opacity .4s, transform .4s;
+    }
+    .guard-chip.up { opacity: 1; transform: none; }
+    .compact .guard-chip { top: 3px; left: 3px; padding: 1px 5px; font-size: .65rem; }
+    .compact .guard-chip span { display: none; }
     @keyframes super-glow { to { box-shadow: 0 0 20px #ffd230, 0 0 34px #ff9d24; } }
     .fighter-card h3 { margin: 6px 0 2px; font-size: 1.35rem; transition: font-size .45s; }
     .compact h3 { font-size: 1rem; }
@@ -227,6 +245,9 @@
     .specials { color: #ffcf7a; font-size: .85rem; }
     .compact .card-details, .compact .power-text { max-height: 0; opacity: 0; }
     .falls { color: #ffd230; font-size: 1.05rem; letter-spacing: 3px; }
+    .defenses { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; letter-spacing: 3px; }
+    .defenses .spent { opacity: .25; filter: grayscale(1); }
+    .compact .defenses { font-size: .8rem; }
     .hp-shell { height: 22px; margin: 8px 0 3px; overflow: hidden; border: 3px solid #fff; background: #310a11; }
     .hp-bar { height: 100%; background: linear-gradient(90deg, #35cf57, #bdf537); transition: width .6s ease; }
     .hp-bar.low { background: linear-gradient(90deg, #ff3b30, #ff9d24); }
@@ -279,6 +300,9 @@
     .fighter-card.super-strike { border-color: #ffd230; box-shadow: 0 0 40px #ffd230; animation: super-lunge .7s ease-out; }
     @keyframes super-lunge { 30% { transform: translateX(-10px) scale(.96); } 55% { transform: translateX(44px) scale(1.12); } }
     .card-stamp.up { border-color: #35cf57; color: #35cf57; }
+    .card-stamp.guard { border-color: #35cfa0; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    .fighter-card.blocked { border-color: #35cfa0; box-shadow: 0 0 30px #35cfa0aa; animation: wobble .6s; }
+    .fighter-card.blocked .damage-pop { color: #35cfa0; animation: pop-up 1.6s ease-out forwards; }
     .fighter-card.rising { border-color: #35cf57; box-shadow: 0 0 30px #35cf57aa; animation: rise .8s ease-out; }
     .fighter-card.rising .damage-pop { color: #35cf57; animation: pop-up 1.6s ease-out forwards; }
     @keyframes rise { 0% { transform: translateY(26px) rotate(6deg); filter: grayscale(1); } 60% { transform: translateY(-12px); } }
@@ -360,6 +384,8 @@
     .power-mode.active { color: #1c0b05; background: #ff9d24; box-shadow: 0 4px 0 #9b4f00, 0 0 18px #ff9d24aa; }
     .super-mode { background: linear-gradient(145deg, #b8860b, #6b4a00); box-shadow: 0 4px 0 #3d2a00; }
     .super-mode.active { color: #1c0b05; background: linear-gradient(145deg, #fff27a, #ffb300); box-shadow: 0 4px 0 #9b6a00, 0 0 22px #ffd230; }
+    .defense-mode { background: #1f7a6a; box-shadow: 0 4px 0 #0d3b33; }
+    .defense-mode.active { color: #04241c; background: linear-gradient(145deg, #c8fff0, #35cfa0); box-shadow: 0 4px 0 #136b52, 0 0 18px #35cfa0aa; }
     .attack-go { min-width: 240px; font-size: 1.35rem; }
     .power-help { margin: 10px 0 0; color: #a9dfff; font: .85rem Arial, sans-serif; }
     .result-box {
@@ -606,10 +632,12 @@
             <div class="choose-actions">
               <button id="power-mode" class="power-mode" type="button" aria-pressed="false">💥 GOLPE FUERTE: NO</button>
               <button id="super-mode" class="super-mode" type="button" aria-pressed="false">🌟 SUPERGOLPE</button>
+              <button id="defense-mode" class="defense-mode" type="button" aria-pressed="false">🛡️ DEFENSA</button>
               <button id="attack-button" class="attack-go" type="button">ELIGE UN ATAQUE</button>
             </div>
             <div class="power-help">Golpe fuerte: más daño por 30 de poder. Con más poder también recibes menos daño.<br>
-              Supergolpe: solo una vez por partida. El árbitro no lo invalida y no se puede bloquear.</div>
+              Supergolpe: solo una vez por partida. El árbitro no lo invalida y no se puede bloquear.<br>
+              Defensa: 3 por partida. Te cubre del próximo golpe que recibas: casi siempre lo para o lo suaviza, pero a veces falla.</div>
           </div>
           <div id="result-panel" class="phase-panel">
             <div class="result-box">
@@ -734,6 +762,22 @@
       return Math.max(1, Math.round(Math.pow(100, Math.random())));
     }
 
+    // Defensas de cada jugador para toda la partida, en todas las caídas.
+    const MAX_DEFENSES = 3;
+    const GUARD_BLOCK_CHANCE = 0.55;
+    const GUARD_SOFTEN_CHANCE = 0.3;
+
+    // Golpe contra un jugador en guardia: el 55 % de las veces lo para entero, el 30 % lo deja
+    // entre el 30 y el 60 % del daño y el 15 % falla.
+    function guardResult(damage) {
+      const roll = Math.random();
+      if (roll < GUARD_BLOCK_CHANCE) return { guard: "blocked", damage: 0 };
+      if (roll < GUARD_BLOCK_CHANCE + GUARD_SOFTEN_CHANCE) {
+        return { guard: "softened", damage: Math.max(1, Math.round(damage * (0.3 + Math.random() * 0.3))) };
+      }
+      return { guard: "failed", damage };
+    }
+
     let players = [];
     let current = 0;
     let phase = "intro";
@@ -743,6 +787,7 @@
     let selectedAttack = null;
     let strongAttack = false;
     let superAttack = false;
+    let defenseMode = false;
     let selectedTarget = null;
     let extraTurnPending = false;
     let isExtraTurn = false;
@@ -1008,7 +1053,9 @@
 
     $("#setup-form").addEventListener("submit", event => {
       event.preventDefault();
-      players = setupChoices.map(fighter => ({ fighter, hp: 100, power: 100, falls: 0, knockdowns: 0, out: false, superUsed: false }));
+      players = setupChoices.map(fighter => ({
+        fighter, hp: 100, power: 100, falls: 0, knockdowns: 0, out: false, superUsed: false, defenses: MAX_DEFENSES, guard: false
+      }));
       players.forEach((player, i) => {
         player.label = displayName(i);
         player.spoken = spokenName(i);
@@ -1075,6 +1122,7 @@
             <div class="card-art">
               <img class="fighter-image" src="${info.image}" alt="${info.name}">
               <div class="super-chip" title="Supergolpe disponible">🌟 SÚPER</div>
+              <div class="guard-chip" title="En guardia: se cubrirá del próximo golpe">🛡️<span> EN GUARDIA</span></div>
               <div class="card-stamp"></div>
               <div class="damage-pop"></div>
             </div>
@@ -1084,6 +1132,7 @@
               <p class="specials">${specials}</p>
             </div>
             <div class="falls"></div>
+            <div class="defenses" role="img"></div>
             <div class="hp-shell"><div class="hp-bar"></div></div>
             <div class="hp-text"></div>
             <div class="power-shell"><div class="power-bar"></div></div>
@@ -1118,6 +1167,11 @@
         ? ""
         : `CAÍDAS ${"●".repeat(player.falls)}${"○".repeat(Math.max(0, fallsToWin - player.falls))}`;
       card.querySelector(".super-chip").classList.toggle("used", player.superUsed);
+      card.querySelector(".guard-chip").classList.toggle("up", player.guard);
+      const defenses = card.querySelector(".defenses");
+      defenses.innerHTML = Array.from({ length: MAX_DEFENSES }, (_, i) => `<span class="${i < player.defenses ? "" : "spent"}">🛡️</span>`).join("");
+      defenses.setAttribute("aria-label", `${player.defenses} de ${MAX_DEFENSES} defensas`);
+      defenses.title = defenses.getAttribute("aria-label");
     }
 
     function updateCards() {
@@ -1153,8 +1207,8 @@
 
     function clearEffects() {
       document.querySelectorAll(".fighter-card").forEach(card => {
-        card.classList.remove("damaged", "ko", "striking", "super-strike", "fumbled", "rising");
-        card.querySelector(".card-stamp").classList.remove("show", "up");
+        card.classList.remove("damaged", "ko", "striking", "super-strike", "fumbled", "rising", "blocked");
+        card.querySelector(".card-stamp").classList.remove("show", "up", "guard");
       });
     }
 
@@ -1198,6 +1252,7 @@
       selectedAttack = null;
       strongAttack = false;
       superAttack = false;
+      defenseMode = false;
       pendingOutcome = null;
       const opponents = aliveIndexes().filter(i => i !== current);
       selectedTarget = opponents.length === 1 ? opponents[0] : null;
@@ -1279,6 +1334,7 @@
       selectedAttack = null;
       strongAttack = false;
       superAttack = false;
+      defenseMode = false;
       renderAttacks();
       updateStage();
     });
@@ -1337,6 +1393,17 @@
       superButton.classList.toggle("active", superAttack);
       superButton.setAttribute("aria-pressed", String(superAttack));
       superButton.textContent = superAttack ? "🌟 SUPERGOLPE: SÍ" : "🌟 SUPERGOLPE";
+      // La defensa no se acumula: hasta recibir un golpe no se puede volver a usar.
+      const canDefend = attacker.defenses > 0 && !attacker.guard;
+      if (!canDefend) defenseMode = false;
+      const defenseButton = $("#defense-mode");
+      defenseButton.hidden = !canDefend && !attacker.guard;
+      defenseButton.disabled = locked || !canDefend;
+      defenseButton.classList.toggle("active", defenseMode);
+      defenseButton.setAttribute("aria-pressed", String(defenseMode));
+      defenseButton.textContent = attacker.guard
+        ? "🛡️ YA EN GUARDIA"
+        : defenseMode ? "🛡️ DEFENSA: SÍ" : `🛡️ DEFENSA (${attacker.defenses})`;
       // El supergolpe ya es el máximo: no se suma al golpe fuerte.
       const canPower = attacker.power >= MIN_STRONG_POWER && !superAttack;
       if (!canPower) strongAttack = false;
@@ -1365,6 +1432,13 @@
       superAttack = !superAttack;
       updateChoosePanel();
     });
+    speakOnHover($("#defense-mode"), () => "Defensa");
+    $("#defense-mode").addEventListener("click", () => {
+      const attacker = players[current];
+      if (phase !== "choose" || locked || attacker.guard || attacker.defenses === 0) return;
+      defenseMode = !defenseMode;
+      updateChoosePanel();
+    });
     $("#attack-button").addEventListener("click", performAttack);
 
     function performAttack() {
@@ -1381,9 +1455,12 @@
         attack,
         isStrong,
         isSuper,
+        // Quien ataca con la defensa activada se pone en guardia para el próximo golpe que reciba.
+        raiseGuard: defenseMode && attacker.defenses > 0 && !attacker.guard,
         invalid: !isSuper && Math.random() < 0.18,
         damage: 0,
         blocked: 0,
+        guard: null,
         newHp: defender.hp,
         knockdown: false,
         getsUp: false,
@@ -1395,13 +1472,16 @@
         risen: false,
         finished: false
       };
+      // Un ataque invalidado no llega: quien estaba en guardia lo sigue estando.
       if (isSuper) {
-        // Supergolpe: 60-80 de daño que la defensa no reduce.
+        // Supergolpe: 60-80 de daño que la defensa no reduce. Si estaba en guardia, se la rompe.
         outcome.damage = Math.floor(Math.random() * 21) + 60;
+        if (defender.guard) outcome.guard = "broken";
         outcome.newHp = Math.max(0, defender.hp - outcome.damage);
       } else if (!outcome.invalid) {
         const rawDamage = Math.floor(Math.random() * 21) + 35 + (isStrong ? 20 : 0);
         outcome.damage = Math.round(rawDamage * (1 - defender.power * 0.004));
+        if (defender.guard) Object.assign(outcome, guardResult(outcome.damage));
         outcome.blocked = rawDamage - outcome.damage;
         outcome.newHp = Math.max(0, defender.hp - outcome.damage);
       }
@@ -1415,11 +1495,13 @@
         outcome.ko = outcome.knockdown && !outcome.getsUp;
         // Con tres jugadores la caída sigue hasta que solo queda uno en pie.
         outcome.fallOver = outcome.ko && aliveIndexes().length === 2;
-        outcome.extra = !outcome.knockdown && !isExtraTurn && Math.random() < 0.2;
+        // Un golpe parado entero no da turno doble.
+        outcome.extra = !outcome.knockdown && outcome.guard !== "blocked" && !isExtraTurn && Math.random() < 0.2;
       }
       pendingOutcome = outcome;
       strongAttack = false;
       superAttack = false;
+      defenseMode = false;
 
       // Las tarjetas vuelven a su tamaño y, cuando han crecido, llega el golpe.
       phase = "result";
@@ -1457,6 +1539,12 @@
       const attacker = players[outcome.attacker];
       if (outcome.isStrong) attacker.power -= MIN_STRONG_POWER;
       if (outcome.isSuper) attacker.superUsed = true;
+      if (outcome.raiseGuard) {
+        attacker.defenses--;
+        attacker.guard = true;
+      }
+      // La guardia se gasta con el golpe que llega, funcione o no.
+      if (outcome.guard) players[outcome.defender].guard = false;
       players[outcome.defender].hp = outcome.newHp;
       if (outcome.knockdown) players[outcome.defender].knockdowns++;
       if (outcome.ko) {
@@ -1481,6 +1569,14 @@
         return;
       }
       attackerCard.classList.add(outcome.isSuper ? "super-strike" : "striking");
+      if (outcome.guard === "blocked") {
+        defenderCard.classList.add("blocked");
+        defenderCard.querySelector(".damage-pop").textContent = "0";
+        const stamp = defenderCard.querySelector(".card-stamp");
+        stamp.textContent = "🛡️";
+        stamp.classList.add("guard", "show");
+        return;
+      }
       defenderCard.querySelector(".damage-pop").textContent = `-${outcome.damage}`;
       defenderCard.classList.add("damaged");
       if (outcome.knockdown) {
@@ -1531,15 +1627,23 @@
       const lines = [`<strong>${attacker}</strong> utiliza ${power}<strong>${attack}</strong>.`];
       if (outcome.invalid) {
         lines.push(`🚫 ¡El árbitro <strong>INVALIDA</strong> el ataque!${outcome.isStrong ? " El golpe fuerte gastó 30 de poder." : ""}`);
-        return lines.join("<br>");
+      } else {
+        const damage = `<strong>${outcome.damage}</strong> de daño`;
+        const guarded = {
+          blocked: `🛡️ ¡${defender} usa su <strong>DEFENSA</strong> y para el golpe entero! No recibe daño.`,
+          softened: `🛡️ ¡La <strong>DEFENSA</strong> de ${defender} amortigua el golpe! Bloquea ${outcome.blocked} y recibe solo ${damage}.`,
+          failed: `🛡️ ¡La <strong>DEFENSA</strong> de ${defender} falla! Bloquea ${outcome.blocked} y recibe ${damage}.`,
+          broken: `🛡️ ¡El supergolpe <strong>ROMPE LA DEFENSA</strong> de ${defender}! Recibe ${damage}.`
+        }[outcome.guard];
+        lines.push(guarded || (outcome.isSuper
+          ? `¡Imposible bloquearlo! ${defender} recibe ${damage}.`
+          : `${defender} bloquea ${outcome.blocked} y recibe ${damage}.`));
+        if (outcome.knockdown) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
+        if (outcome.risen) lines.push(`🆙 <strong>¡${defender} SE LEVANTA</strong> con ${outcome.riseHp} de vida!`);
+        if (outcome.ko && !outcome.fallOver) lines.push(`❌ <strong>${defender} queda FUERA</strong> de esta caída.`);
+        if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
       }
-      lines.push(outcome.isSuper
-        ? `¡Imposible bloquearlo! ${defender} recibe <strong>${outcome.damage}</strong> de daño.`
-        : `${defender} bloquea ${outcome.blocked} y recibe <strong>${outcome.damage}</strong> de daño.`);
-      if (outcome.knockdown) lines.push(`💫 <strong>¡${defender} CAE A LA LONA!</strong>`);
-      if (outcome.risen) lines.push(`🆙 <strong>¡${defender} SE LEVANTA</strong> con ${outcome.riseHp} de vida!`);
-      if (outcome.ko && !outcome.fallOver) lines.push(`❌ <strong>${defender} queda FUERA</strong> de esta caída.`);
-      if (outcome.extra) lines.push(`⭐ <strong>¡${attacker} consigue un TURNO DOBLE!</strong>`);
+      if (outcome.raiseGuard) lines.push(`🛡️ <strong>${attacker} se pone EN GUARDIA</strong> para el próximo golpe que reciba.`);
       return lines.join("<br>");
     }
 
@@ -1556,18 +1660,29 @@
       if (outcome.isSuper) parts.push(pick(["¡Es el supergolpe! ¡Lo tenía guardado para este momento!", "¡Supergolpe! ¡No hay quien pare eso!"]));
       if (outcome.invalid) {
         parts.push(pick(["¡Pero no! ¡El árbitro lo invalida! ¡Qué polémica!", `¡El árbitro dice que no! ¡${attack} no vale!`]));
-        return parts.join(" ");
+      } else {
+        if (outcome.guard === "blocked") {
+          parts.push(pick([`¡Pero ${defender} lo para con su defensa! ¡Ni un rasguño!`, `¡Bloqueado! ¡La defensa de ${defender} aguanta el golpe entero!`]));
+        } else if (outcome.guard === "softened") {
+          parts.push(pick([`¡${defender} se cubre con su defensa y el golpe pierde fuerza!`, `¡La defensa de ${defender} amortigua el golpe!`]));
+        } else if (outcome.guard === "failed") {
+          parts.push(pick([`¡${defender} intenta cubrirse, pero la defensa falla!`, `¡La defensa de ${defender} no aguanta!`]));
+        } else if (outcome.guard === "broken") {
+          parts.push(pick([`¡El supergolpe rompe la defensa de ${defender}!`, `¡Ni la defensa de ${defender} puede con eso!`]));
+        }
+        if (outcome.knockdown) {
+          parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos!${outcome.getsUp ? "" : " ¡Tres!"}`);
+          if (outcome.ko && !outcome.fallOver) parts.push(`¡${defender} queda fuera de esta caída!`);
+        } else if (outcome.guard !== "blocked") {
+          if (outcome.guard === "softened") parts.push(`Solo recibe ${outcome.damage} de daño.`);
+          else if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
+          else if (outcome.damage >= 30) parts.push(`¡Le entra de lleno! ${outcome.damage} de daño.`);
+          else parts.push(`${defender} se cubre bien y solo recibe ${outcome.damage}.`);
+          if (outcome.newHp <= 30) parts.push(`¡${defender} está contra las cuerdas!`);
+          if (outcome.extra) parts.push(`¡Y atención, que ${attacker} tiene turno doble!`);
+        }
       }
-      if (outcome.knockdown) {
-        parts.push(`¡${defender} se queda en la lona! ¡Uno! ¡Dos!${outcome.getsUp ? "" : " ¡Tres!"}`);
-        if (outcome.ko && !outcome.fallOver) parts.push(`¡${defender} queda fuera de esta caída!`);
-        return parts.join(" ");
-      }
-      if (outcome.damage >= 45) parts.push(`¡Tremendo impacto! ¡${outcome.damage} puntos de daño!`);
-      else if (outcome.damage >= 30) parts.push(`¡Le entra de lleno! ${outcome.damage} de daño.`);
-      else parts.push(`${defender} se cubre bien y solo recibe ${outcome.damage}.`);
-      if (outcome.newHp <= 30) parts.push(`¡${defender} está contra las cuerdas!`);
-      if (outcome.extra) parts.push(`¡Y atención, que ${attacker} tiene turno doble!`);
+      if (outcome.raiseGuard) parts.push(pick([`¡Y ${attacker} se pone en guardia!`, `¡${attacker} levanta la guardia para lo que venga!`]));
       return parts.join(" ");
     }
 
@@ -1663,7 +1778,9 @@
         player.hp = 100;
         player.power = 100;
         player.knockdowns = 0;
-        player.out = false; // el supergolpe no se recupera: es uno por partida
+        // El supergolpe y las defensas no se recuperan: son para toda la partida.
+        // Quien quedó en guardia lo sigue estando hasta que le llegue un golpe.
+        player.out = false;
       });
       current = starterIndex;
       extraTurnPending = false;
@@ -1992,6 +2109,7 @@
       selectedAttack = null;
       strongAttack = false;
       superAttack = false;
+      defenseMode = false;
       selectedTarget = null;
       extraTurnPending = false;
       isExtraTurn = false;
