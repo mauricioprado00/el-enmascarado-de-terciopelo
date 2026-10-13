@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" role="img" aria-labelledby="title">
+  <title id="title">La Viuda Negra</title>
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".32" r=".8">
+      <stop stop-color="#4a1a6b"/><stop offset="1" stop-color="#07030c"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx=".5" cy=".42" r=".7">
+      <stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <radialGradient id="mask" cx=".36" cy=".3" r=".85">
+      <stop stop-color="#5b5566"/><stop offset=".6" stop-color="#1d1a24"/><stop offset="1" stop-color="#060508"/>
+    </radialGradient>
+    <radialGradient id="skin" cx=".35" cy=".3" r=".9">
+      <stop stop-color="#ffe1cc"/><stop offset="1" stop-color="#d9a98c"/>
+    </radialGradient>
+    <linearGradient id="suit" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2a2233"/><stop offset="1" stop-color="#050407"/>
+    </linearGradient>
+    <linearGradient id="aura" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#ff4d00"/><stop offset=".6" stop-color="#ffb000"/><stop offset="1" stop-color="#fff1a0"/>
+    </linearGradient>
+    <linearGradient id="bone" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#cdbb94"/><stop offset="1" stop-color="#fffaf0"/>
+    </linearGradient>
+    <linearGradient id="feather" x1="1" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffffff"/><stop offset="1" stop-color="#9fb4cc"/>
+    </linearGradient>
+    <linearGradient id="curtain" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#2a0636"/><stop offset=".6" stop-color="#6d1a86"/><stop offset="1" stop-color="#3a0a4a"/>
+    </linearGradient>
+    <pattern id="dots" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="4.5" cy="4.5" r="1.6" fill="#fff"/>
+    </pattern>
+    <clipPath id="headClip"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z"/></clipPath>
+  </defs>
+  <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="420"><rect width="320" height="420" fill="#fff"/><g><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="#000"/></mask><g mask="url(#holes)"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z" fill="url(#mask)" stroke="#050308" stroke-width="7"/><g clip-path="url(#headClip)"><circle cx="236" cy="204" r="112" fill="#000" opacity=".22"/><ellipse cx="124" cy="84" rx="36" ry="17" transform="rotate(-28 124 84)" fill="#fff" opacity=".32"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="url(#skin)" stroke="#050308" stroke-width="6"/><path d="M150 172Q160 182 170 172" fill="none" stroke="#050308" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M160 88L134 74M160 88L130 88M160 88L134 102M160 88L142 114M160 88L186 74M160 88L190 88M160 88L186 102M160 88L178 114" stroke="#e2182d" stroke-width="4" stroke-linecap="round"/><ellipse cx="160" cy="78" rx="9" ry="8" fill="#e2182d"/><ellipse cx="160" cy="96" rx="12" ry="14" fill="#e2182d"/><path d="M155 90H165L161 96L165 102H155L159 96Z" fill="#111"/><g><path d="M154 150Q124 164 98 148Q86 140 72 112Q102 124 118 116Q138 110 152 116Z" fill="#8e2bd6" stroke="#050308" stroke-width="5" stroke-linejoin="round"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M154 150Q124 164 98 148Q86 140 72 112Q102 124 118 116Q138 110 152 116Z" fill="#8e2bd6" stroke="#050308" stroke-width="5" stroke-linejoin="round"/></g></g>
+</svg>

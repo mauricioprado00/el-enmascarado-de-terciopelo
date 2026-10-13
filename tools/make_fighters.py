@@ -2,7 +2,14 @@
 """Genera los retratos SVG de los luchadores en assets/.
 
 Todos comparten la misma anatomía (pose de doble bíceps, máscara con volumen,
-cinta con el nombre) y cambian colores y rasgos. Ejecutar desde la raíz:
+cinta con el nombre) y cambian colores y rasgos. De cada luchador salen tres
+archivos para la lucha de máscara contra máscara:
+
+    nombre.svg              el retrato con máscara
+    nombre-sin-mascara.svg  la cara de verdad, con gesto de derrota
+    nombre-mascara.svg      solo la máscara (o la cabellera), que sale volando
+
+Ejecutar desde la raíz:
 
     python3 tools/make_fighters.py
 """
@@ -16,6 +23,12 @@ W, H = 320, 420
 
 MASK = "M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z"
 MOUTH_OPENING = "M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z"
+EYE_HOLE = "M104 140Q126 118 150 137Q128 158 104 140Z"
+HAIR_FRINGE = ("M84 136Q82 58 160 52Q238 58 236 136Q218 100 188 92Q194 110 182 118Q172 94 146 90"
+               "Q140 108 122 112Q126 96 118 92Q100 106 84 136Z")
+# Rasgos de detrás de la cabeza que son parte de la máscara y se van con ella.
+MASK_FEATURES = {"horns", "wings", "crest", "bolts"}
+SAD_BROW = "M102 130Q124 122 150 115"
 
 EYE_PATCHES = {
     "angular": "M90 146L98 100Q130 106 150 116L154 152Q118 168 90 146Z",
@@ -188,7 +201,7 @@ def eyes(c):
            '<circle cx="134" cy="136" r="2.2" fill="#fff"/>')
     if c.get("lashes"):
         eye += f'<path d="M106 140L98 132M112 133L106 125M120 128L117 120" stroke="{o}" stroke-width="3" stroke-linecap="round"/>'
-    brow = ('M100 124L150 136' if c["side"] == "rudo" else 'M104 124Q126 112 150 124')
+    brow = c.get("brow") or ('M100 124L150 136' if c["side"] == "rudo" else 'M104 124Q126 112 150 124')
     width = 6 if c.get("lashes") else 8
     eye += f'<path d="{brow}" fill="none" stroke="{o}" stroke-width="{width}" stroke-linecap="round"/>'
     return mirrored(eye)
@@ -237,11 +250,11 @@ def forehead(c):
     return ""
 
 
-def behind_head(c):
+def behind_head(c, keep=lambda feat: True):
     """Rasgos detrás de la cabeza: pelo largo, coleta, cuernos, alas, cresta, cuello de capa."""
     o = c["outline"]
     out = ""
-    for feat in c.get("features", []):
+    for feat in filter(keep, c.get("features", [])):
         if feat == "long_hair":
             out += (f'<path d="M90 110C66 180 74 262 56 306Q108 300 122 244H198Q212 300 264 306C246 262 254 180 230 110Z" fill="{c["hair"]}" stroke="{o}" stroke-width="6" stroke-linejoin="round"/>'
                     f'<path d="M84 180Q80 240 70 290M236 180Q240 240 250 290" stroke="#fff" stroke-opacity=".18" stroke-width="5" fill="none"/>')
@@ -263,10 +276,9 @@ def behind_head(c):
     return out
 
 
-def head(c):
+def mask_shell(c):
+    """La máscara sin los ojos ni la boca de quien la lleva."""
     o = c["outline"]
-    if c.get("bare"):
-        return bare_head(c)
     out = (f'<path d="{MASK}" fill="url(#mask)" stroke="{o}" stroke-width="7"/>'
            '<g clip-path="url(#headClip)">'
            '<circle cx="236" cy="204" r="112" fill="#000" opacity=".22"/>'
@@ -284,6 +296,13 @@ def head(c):
         out += mirrored(f'<path d="{EYE_PATCHES[patch]}" fill="{c["accent"]}" stroke="{o}" stroke-width="5" stroke-linejoin="round"/>')
     if c.get("forehead") == "beak":
         out += forehead(c)  # el pico va por encima de los parches
+    return out
+
+
+def head(c):
+    if c.get("bare"):
+        return bare_head(c)
+    out = mask_shell(c)
     out += eyes(c)
     out += mouth(c)
     if "nose_ring" in c.get("features", []):
@@ -296,15 +315,102 @@ def bare_head(c):
     o = c["outline"]
     out = (f'<path d="{MASK}" fill="url(#skin)" stroke="{o}" stroke-width="7"/>'
            '<g clip-path="url(#headClip)"><circle cx="240" cy="206" r="110" fill="#000" opacity=".16"/></g>'
-           f'<path d="M84 136Q82 58 160 52Q238 58 236 136Q218 100 188 92Q194 110 182 118Q172 94 146 90Q140 108 122 112Q126 96 118 92Q100 106 84 136Z" fill="{c["hair"]}" stroke="{o}" stroke-width="6" stroke-linejoin="round"/>'
+           f'<path d="{HAIR_FRINGE}" fill="{c["hair"]}" stroke="{o}" stroke-width="6" stroke-linejoin="round"/>'
            '<path d="M118 70Q150 58 190 66" stroke="#fff" stroke-opacity=".25" stroke-width="6" fill="none" stroke-linecap="round"/>'
-           f'<path d="M104 160L96 176H106L100 192L118 170H108L114 160Z" fill="{c["accent2"]}" stroke="{o}" stroke-width="2.5" stroke-linejoin="round"/>'
-           f'<path d="M154 150Q156 166 150 172Q158 176 166 172" fill="none" stroke="{o}" stroke-opacity=".5" stroke-width="3.5" stroke-linecap="round"/>'
-           f'<circle cx="84" cy="168" r="9" fill="none" stroke="{c["accent2"]}" stroke-width="4"/>'
-           f'<circle cx="236" cy="168" r="9" fill="none" stroke="{c["accent2"]}" stroke-width="4"/>')
+           + war_paint(c) + nose(c) + earrings(c))
     out += eyes(c)
     out += mouth(c)
     return out
+
+
+def war_paint(c):
+    return f'<path d="M104 160L96 176H106L100 192L118 170H108L114 160Z" fill="{c["accent2"]}" stroke="{c["outline"]}" stroke-width="2.5" stroke-linejoin="round"/>'
+
+
+def nose(c):
+    return f'<path d="M154 150Q156 166 150 172Q158 176 166 172" fill="none" stroke="{c["outline"]}" stroke-opacity=".5" stroke-width="3.5" stroke-linecap="round"/>'
+
+
+def earrings(c):
+    return (f'<circle cx="84" cy="168" r="9" fill="none" stroke="{c["accent2"]}" stroke-width="4"/>'
+            f'<circle cx="236" cy="168" r="9" fill="none" stroke="{c["accent2"]}" stroke-width="4"/>')
+
+
+# ---------- sin máscara ----------
+
+def hair_top(c):
+    o, u = c["outline"], c["unmasked"]
+    hair, style = u["hair"], u["style"]
+    if style in ("short", "long"):
+        return (f'<path d="{HAIR_FRINGE}" fill="{hair}" stroke="{o}" stroke-width="6" stroke-linejoin="round"/>'
+                '<path d="M118 70Q150 58 190 66" stroke="#fff" stroke-opacity=".25" stroke-width="6" fill="none" stroke-linecap="round"/>')
+    if style == "bald":
+        return (mirrored(f'<path d="M84 150Q78 112 100 100Q94 126 102 152Z" fill="{hair}" stroke="{o}" stroke-width="5" stroke-linejoin="round"/>')
+                + '<ellipse cx="136" cy="76" rx="24" ry="11" transform="rotate(-20 136 76)" fill="#fff" opacity=".45"/>')
+    if style == "mohawk":
+        return (f'<path d="M144 100Q136 44 160 14Q184 44 176 100Q160 92 144 100Z" fill="{hair}" stroke="{o}" stroke-width="5" stroke-linejoin="round"/>'
+                + mirrored(f'<path d="M86 140Q86 110 100 96" stroke="{hair}" stroke-opacity=".5" stroke-width="8" fill="none" stroke-linecap="round"/>'))
+    if style == "curly":
+        curls = []
+        for i in range(9):
+            a = math.radians(200 + i * 17.5)
+            curls.append(f'<circle cx="{160 + 80 * math.cos(a):.0f}" cy="{122 + 70 * math.sin(a):.0f}" r="22" fill="{hair}" stroke="{o}" stroke-width="5"/>')
+        return "".join(curls) + f'<circle cx="160" cy="70" r="26" fill="{hair}"/>'
+    if style == "shaved":
+        # Rapada: solo queda la sombra del pelo.
+        return (f'<g clip-path="url(#headClip)"><path d="M70 40H250V114Q206 98 160 98Q114 98 70 114Z" fill="{hair}" opacity=".35"/></g>'
+                '<ellipse cx="134" cy="72" rx="22" ry="10" transform="rotate(-20 134 72)" fill="#fff" opacity=".35"/>')
+    raise ValueError(style)
+
+
+def facial_hair(c):
+    o, u = c["outline"], c["unmasked"]
+    if u.get("facial") == "mustache":
+        return f'<path d="M134 190Q146 178 160 186Q174 178 186 190Q178 200 160 194Q142 200 134 190Z" fill="{u["hair"]}" stroke="{o}" stroke-width="3.5" stroke-linejoin="round"/>'
+    if u.get("facial") == "beard":
+        return f'<path d="M96 168Q104 218 160 228Q216 218 224 168Q208 204 160 208Q112 204 96 168Z" fill="{u["hair"]}" opacity=".55"/>'
+    return ""
+
+
+def sad_mouth(c):
+    o = c["outline"]
+    if c["mouth"] in ("lips", "smirk"):
+        return f'<path d="M142 208Q160 194 178 208Q168 214 160 212Q152 214 142 208Z" fill="{c.get("lip", "#c2183b")}" stroke="{o}" stroke-width="3" stroke-linejoin="round"/>'
+    return f'<path d="M140 210Q160 196 180 210" fill="none" stroke="{o}" stroke-width="5" stroke-linecap="round"/>'
+
+
+def unmasked_head(c):
+    """La cara que había debajo de la máscara: avergonzada y sudando."""
+    o = c["outline"]
+    out = (f'<path d="{MASK}" fill="url(#skin)" stroke="{o}" stroke-width="7"/>'
+           '<g clip-path="url(#headClip)"><circle cx="240" cy="206" r="110" fill="#000" opacity=".16"/></g>'
+           + hair_top(c) + nose(c))
+    if c.get("bare"):
+        out += war_paint(c) + earrings(c)
+    out += eyes({**c, "eyes": None, "brow": SAD_BROW, "iris": c["unmasked"].get("iris", c["iris"])})
+    out += facial_hair(c) + sad_mouth(c)
+    if "nose_ring" in c.get("features", []):
+        out += '<circle cx="160" cy="184" r="10" fill="none" stroke="#ffd230" stroke-width="5"/>'
+    out += f'<path d="M218 98Q208 114 212 122Q218 128 225 121Q228 111 218 98Z" fill="#8fdcff" stroke="{o}" stroke-width="2.5"/>'
+    return out
+
+
+def mask_piece(c):
+    """Solo lo que se quita: la máscara con sus agujeros, o la cabellera de Karla."""
+    o = c["outline"]
+    if c.get("bare"):
+        return (behind_head(c, keep=lambda feat: feat == "long_hair")
+                + f'<path d="{HAIR_FRINGE}" fill="{c["hair"]}" stroke="{o}" stroke-width="6" stroke-linejoin="round"/>')
+    holes = mirrored(f'<path d="{EYE_HOLE}" fill="#000"/>')
+    if c["mouth"] != "grill":
+        holes += f'<path d="{MOUTH_OPENING}" fill="#000"/>'
+    shell = mask_shell(c)
+    if c.get("eyes") == "glow":
+        shell += f'<path d="M86 124Q160 104 234 124L228 158Q160 142 92 158Z" fill="#15171b" stroke="{o}" stroke-width="5" stroke-linejoin="round"/>'
+    return (f'<mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="{W}" height="{H}">'
+            f'<rect width="{W}" height="{H}" fill="#fff"/>{holes}</mask>'
+            + behind_head(c, keep=lambda feat: feat in MASK_FEATURES)
+            + f'<g mask="url(#holes)">{shell}</g>')
 
 
 def banner(c):
@@ -318,7 +424,7 @@ def banner(c):
             f'font-family="Impact, Anton, \'Arial Black\', sans-serif" font-weight="900" font-size="30" letter-spacing="1" text-anchor="middle"{fit}>{name}</text>')
 
 
-def svg(c):
+def svg(c, variant="masked"):
     defs = f'''
   <defs>
     <radialGradient id="bg" cx=".5" cy=".32" r=".8">
@@ -353,20 +459,27 @@ def svg(c):
     </pattern>
     <clipPath id="headClip"><path d="{MASK}"/></clipPath>
   </defs>'''
-    body = (
-        '<rect width="320" height="420" fill="url(#bg)"/>'
-        + sunburst("#fff", .07)
-        + '<rect width="320" height="420" fill="url(#dots)" opacity=".08"/>'
-        + BACKGROUNDS[c["background"]](c)
-        + '<rect width="320" height="420" fill="url(#vignette)"/>'
-        + arms(c)
-        + torso(c)
-        + behind_head(c)
-        + neck(c)
-        + '<ellipse cx="160" cy="232" rx="60" ry="12" fill="#000" opacity=".25"/>'
-        + head(c)
-        + banner(c)
-    )
+    if variant == "mask":
+        body = mask_piece(c)
+    else:
+        unmasked = variant == "unmasked"
+        # Sin máscara se pierden los rasgos de la máscara; rapada, también el pelo largo.
+        shaved = unmasked and c["unmasked"]["style"] == "shaved"
+        keep = lambda feat: not (unmasked and (feat in MASK_FEATURES or (shaved and feat == "long_hair")))
+        body = (
+            '<rect width="320" height="420" fill="url(#bg)"/>'
+            + sunburst("#fff", .07)
+            + '<rect width="320" height="420" fill="url(#dots)" opacity=".08"/>'
+            + BACKGROUNDS[c["background"]](c)
+            + '<rect width="320" height="420" fill="url(#vignette)"/>'
+            + arms(c)
+            + torso(c)
+            + behind_head(c, keep)
+            + neck(c)
+            + '<ellipse cx="160" cy="232" rx="60" ry="12" fill="#000" opacity=".25"/>'
+            + (unmasked_head(c) if unmasked else head(c))
+            + banner(c)
+        )
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-labelledby="title">\n'
             f'  <title id="title">{c["title"]}</title>{defs}\n  {body}\n</svg>\n')
 
@@ -381,6 +494,7 @@ FIGHTERS = {
         skin1="#ffd9b3", skin2="#d9a57c", suit1="#8b35b0", suit2="#2d0c40", pad="#138a88", band="#ff7a1a",
         outline="#0d1f2a", iris="#ffcf1a", patch="angular", forehead="diamond", mouth="snarl",
         emblem="diamond", emblem_a="#ff7a1a", emblem_b="#5fe3d6", features=["collar"], collar="#ff7a1a",
+        unmasked=dict(style="short", hair="#2b1a10", facial="mustache"),
         banner_fill="#8b35b0", banner_dark="#4a1463"),
     "el-exterminador": dict(
         title="El Exterminador", banner="EXTERMINADOR", side="rudo",
@@ -389,6 +503,7 @@ FIGHTERS = {
         skin1="#e0a27a", skin2="#9c6242", suit1="#34383e", suit2="#101114", pad="#6c727b", pads="spikes", band="#ff342d",
         outline="#0a0a0c", iris="#ff342d", eyes="glow", mouth="grill",
         emblem="x", emblem_a="#ff342d", emblem_b="#fff", features=["bolts"],
+        unmasked=dict(style="bald", hair="#5a3a28", facial="beard", iris="#6b4a2a"),
         banner_fill="#b3121f", banner_dark="#5c0910"),
     "la-viuda-negra": dict(
         title="La Viuda Negra", banner="VIUDA NEGRA", side="rudo",
@@ -397,6 +512,7 @@ FIGHTERS = {
         skin1="#ffe1cc", skin2="#d9a98c", suit1="#2a2233", suit2="#050407", pad="#e2182d", band="#8e2bd6",
         outline="#050308", iris="#b44dff", patch="cat", forehead="spider", mouth="smirk", lip="#9e0f2e", lashes=True,
         emblem="hourglass", emblem_a="#e2182d", emblem_b="#fff", features=["long_hair"], hair="#141018",
+        unmasked=dict(style="long", hair="#141018"),
         banner_fill="#e2182d", banner_dark="#6e0916"),
     "el-toro-salvaje": dict(
         title="El Toro Salvaje", banner="TORO SALVAJE", side="rudo",
@@ -405,6 +521,7 @@ FIGHTERS = {
         skin1="#c98a60", skin2="#7a4a2e", suit1="#8f1d12", suit2="#2b0704", pad="#2a0c09", pads="spikes", band="#ffd230",
         outline="#120403", iris="#ff5a1a", patch="fang", forehead="laces", mouth="snarl",
         emblem="horns", emblem_a="#ffd230", emblem_b="#ffd230", features=["horns", "nose_ring"],
+        unmasked=dict(style="mohawk", hair="#1a0d08", facial="beard", iris="#6b3a1a"),
         banner_fill="#c7261a", banner_dark="#5e0f09"),
     "golden-fire": dict(
         title="Golden Fire", banner="GOLDEN FIRE", side="tecnico",
@@ -413,6 +530,7 @@ FIGHTERS = {
         skin1="#f5c49a", skin2="#c98a60", suit1="#ffd230", suit2="#c77700", pad="#ff8a12", band="#d9263f",
         outline="#5c1406", iris="#ff7a00", patch="flame", forehead="flame", mouth="grin",
         emblem="flame", emblem_a="#d9263f", emblem_b="#ffe14a", features=["crest"],
+        unmasked=dict(style="curly", hair="#f0b429", iris="#4a7a2a"),
         banner_fill="#e0520b", banner_dark="#7a2206"),
     "karla": dict(
         title="Karla", banner="KARLA", side="tecnico", bare=True,
@@ -421,6 +539,7 @@ FIGHTERS = {
         skin1="#e0a07a", skin2="#a8663f", suit1="#ffd230", suit2="#e64b25", pad="#e64b25", band="#ffd230",
         outline="#1e0e24", iris="#4a2a14", mouth="lips", lip="#c2183b", lashes=True,
         emblem="bolt", emblem_a="#ffd230", emblem_b="#fff", features=["long_hair"], hair="#241126",
+        unmasked=dict(style="shaved", hair="#241126"),
         banner_fill="#e64b25", banner_dark="#7a2310"),
     "halcon-plateado": dict(
         title="Halcón Plateado", banner="HALCÓN PLATEADO", side="tecnico",
@@ -429,6 +548,7 @@ FIGHTERS = {
         skin1="#f3c29a", skin2="#b97d56", suit1="#2f8cff", suit2="#0b2d6b", pad="#d7e0ea", band="#ffc21a",
         outline="#08142e", iris="#1f6fe0", patch="wing", forehead="beak", mouth="grin",
         emblem="wings", emblem_a="#e6edf5", emblem_b="#ffc21a", features=["wings"],
+        unmasked=dict(style="short", hair="#c9ced6", facial="mustache"),
         banner_fill="#1f6fe0", banner_dark="#0b3276"),
     "estrella-fugaz": dict(
         title="Estrella Fugaz", banner="ESTRELLA FUGAZ", side="tecnico",
@@ -437,10 +557,12 @@ FIGHTERS = {
         skin1="#ffd9c0", skin2="#d9a07e", suit1="#ff4fb8", suit2="#6a1aa8", pad="#f4f6ff", band="#ffd230",
         outline="#2a0730", iris="#2fb6ff", patch="star", forehead="star", mouth="lips", lip="#ff2f6d", lashes=True,
         emblem="star", emblem_a="#ffd230", emblem_b="#fff7c2", features=["ponytail"], hair="#ffd230",
+        unmasked=dict(style="long", hair="#ffd230"),
         banner_fill="#d61f9a", banner_dark="#6a0c4c"),
 }
 
 if __name__ == "__main__":
     for filename, config in FIGHTERS.items():
-        (ASSETS / f"{filename}.svg").write_text(svg(config), encoding="utf-8")
+        for variant, suffix in (("masked", ""), ("unmasked", "-sin-mascara"), ("mask", "-mascara")):
+            (ASSETS / f"{filename}{suffix}.svg").write_text(svg(config, variant), encoding="utf-8")
         print("escrito", filename)

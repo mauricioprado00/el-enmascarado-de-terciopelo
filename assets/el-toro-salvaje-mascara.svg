@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" role="img" aria-labelledby="title">
+  <title id="title">El Toro Salvaje</title>
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".32" r=".8">
+      <stop stop-color="#b3361a"/><stop offset="1" stop-color="#1c0503"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx=".5" cy=".42" r=".7">
+      <stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <radialGradient id="mask" cx=".36" cy=".3" r=".85">
+      <stop stop-color="#6a2b24"/><stop offset=".6" stop-color="#2a0c09"/><stop offset="1" stop-color="#0c0302"/>
+    </radialGradient>
+    <radialGradient id="skin" cx=".35" cy=".3" r=".9">
+      <stop stop-color="#c98a60"/><stop offset="1" stop-color="#7a4a2e"/>
+    </radialGradient>
+    <linearGradient id="suit" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#8f1d12"/><stop offset="1" stop-color="#2b0704"/>
+    </linearGradient>
+    <linearGradient id="aura" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#ff4d00"/><stop offset=".6" stop-color="#ffb000"/><stop offset="1" stop-color="#fff1a0"/>
+    </linearGradient>
+    <linearGradient id="bone" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#cdbb94"/><stop offset="1" stop-color="#fffaf0"/>
+    </linearGradient>
+    <linearGradient id="feather" x1="1" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffffff"/><stop offset="1" stop-color="#9fb4cc"/>
+    </linearGradient>
+    <linearGradient id="curtain" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#2a0636"/><stop offset=".6" stop-color="#6d1a86"/><stop offset="1" stop-color="#3a0a4a"/>
+    </linearGradient>
+    <pattern id="dots" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="4.5" cy="4.5" r="1.6" fill="#fff"/>
+    </pattern>
+    <clipPath id="headClip"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z"/></clipPath>
+  </defs>
+  <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="420"><rect width="320" height="420" fill="#fff"/><g><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="#000"/></mask><g><path d="M106 86C80 72 58 44 64 12C76 38 98 52 126 62Z" fill="url(#bone)" stroke="#120403" stroke-width="6" stroke-linejoin="round"/><path d="M72 36Q86 50 100 56M68 24Q78 34 90 40" stroke="#120403" stroke-opacity=".35" stroke-width="3" fill="none"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M106 86C80 72 58 44 64 12C76 38 98 52 126 62Z" fill="url(#bone)" stroke="#120403" stroke-width="6" stroke-linejoin="round"/><path d="M72 36Q86 50 100 56M68 24Q78 34 90 40" stroke="#120403" stroke-opacity=".35" stroke-width="3" fill="none"/></g><g mask="url(#holes)"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z" fill="url(#mask)" stroke="#120403" stroke-width="7"/><g clip-path="url(#headClip)"><circle cx="236" cy="204" r="112" fill="#000" opacity=".22"/><ellipse cx="124" cy="84" rx="36" ry="17" transform="rotate(-28 124 84)" fill="#fff" opacity=".32"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="url(#skin)" stroke="#120403" stroke-width="6"/><path d="M150 172Q160 182 170 172" fill="none" stroke="#120403" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M160 54V104" stroke="#120403" stroke-width="4"/><path d="M152 62L168 70M168 62L152 70M152 78L168 86M168 78L152 86M152 94L168 102M168 94L152 102" stroke="#ffd230" stroke-width="3" stroke-linecap="round"/><g><path d="M88 128Q120 104 152 116L154 150L142 142L134 156L124 144L114 158L106 144L92 150Z" fill="#e0261b" stroke="#120403" stroke-width="5" stroke-linejoin="round"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M88 128Q120 104 152 116L154 150L142 142L134 156L124 144L114 158L106 144L92 150Z" fill="#e0261b" stroke="#120403" stroke-width="5" stroke-linejoin="round"/></g></g>
+</svg>

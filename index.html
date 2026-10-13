@@ -650,6 +650,38 @@
     @keyframes struggle { from { transform: rotate(-8deg) translateY(10px); } to { transform: rotate(4deg) translateY(-4px); } }
     @keyframes crowd-jump { to { transform: translateY(-10px) scale(1.2); } }
 
+    /* ---------- Máscara contra máscara ---------- */
+    #unmask-screen h2 { margin: 0 0 12px; font-size: clamp(2rem, 8vw, 3.6rem); }
+    .unmask-stage { position: relative; width: min(260px, 62vw); aspect-ratio: 320 / 420; margin: 0 auto 12px; }
+    .unmask-stage img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 4px solid #ffd230;
+      border-radius: 14px;
+    }
+    /* La máscara sola lleva el mismo borde, invisible, para quedar encima exacta. */
+    .unmask-stage .unmask-piece { border-color: transparent; transform-origin: 50% 33%; z-index: 2; }
+    .unmask-face, .unmask-piece, .revealed .unmask-full { visibility: hidden; }
+    .revealed .unmask-face, .revealed .unmask-piece { visibility: visible; }
+    .unmask-full { box-shadow: 0 0 40px #ffd230aa; animation: tension .18s ease-in-out infinite alternate; }
+    .revealed .unmask-face { box-shadow: 0 0 40px #ffd230aa; animation: reveal-flash .9s .35s both; }
+    .revealed .unmask-piece { animation: rip-off 1.1s ease-in forwards; }
+    .unmask-name { font-size: clamp(1.3rem, 5vw, 2rem); }
+    .unmask-reveal { min-height: 2.6em; margin: 6px 0 14px; color: #f3dcff; font: 1.15rem Arial, sans-serif; }
+    .unmask-reveal strong { color: #ffd230; }
+    #unmask-button { min-width: 240px; font-size: 1.3rem; }
+    @keyframes tension { from { transform: rotate(-.6deg); } to { transform: rotate(.6deg); } }
+    @keyframes rip-off {
+      12% { transform: translate(-4px, 2px) rotate(-5deg); }
+      24% { transform: translate(5px, -2px) rotate(6deg); }
+      36% { transform: translate(-3px, 0) rotate(-4deg); opacity: 1; }
+      100% { transform: translate(70%, -140%) rotate(50deg) scale(.8); opacity: 0; }
+    }
+    @keyframes reveal-flash { 30% { filter: brightness(2.2); } }
+    .winner-note { margin: 0 0 16px; color: #f3dcff; font: bold 1.1rem Arial, sans-serif; }
+
     #winner-screen h2 { font-size: clamp(2.5rem, 10vw, 5rem); }
     .winner-image {
       width: min(240px, 60vw);
@@ -712,6 +744,11 @@
             <button type="button" class="format-option" role="radio" data-falls="1"><strong>UNA CAÍDA</strong><small>Gana la primera caída</small></button>
             <button type="button" class="format-option" role="radio" data-falls="2"><strong>DOS DE TRES</strong><small>Gana quien consiga 2</small></button>
           </div>
+          <div class="format-picker" role="radiogroup" aria-labelledby="bet-label">
+            <div id="bet-label" class="field-label">¿QUÉ SE APUESTA?</div>
+            <button type="button" class="format-option" role="radio" data-bet="0"><strong>SIN APUESTA</strong><small>Solo por el honor</small></button>
+            <button type="button" class="format-option" role="radio" data-bet="1"><strong>🎭 MÁSCARA CONTRA MÁSCARA</strong><small>Quien pierde, se la quita</small></button>
+          </div>
           <button type="submit" style="margin-top:20px">¡COMENZAR PELEA!</button>
         </form>
       </div>
@@ -759,11 +796,26 @@
       </div>
     </section>
 
+    <section id="unmask-screen" class="screen">
+      <div class="panel">
+        <h2 id="unmask-title"></h2>
+        <div id="unmask-stage" class="unmask-stage">
+          <img id="unmask-full" class="unmask-full" alt="">
+          <img id="unmask-face" class="unmask-face" alt="">
+          <img id="unmask-piece" class="unmask-piece" alt="">
+        </div>
+        <div id="unmask-name" class="unmask-name"></div>
+        <p id="unmask-reveal" class="unmask-reveal" aria-live="polite"></p>
+        <button id="unmask-button" type="button"></button>
+      </div>
+    </section>
+
     <section id="winner-screen" class="screen">
       <div class="panel">
         <div class="fighter-icon">🏆</div>
         <img id="winner-image" class="winner-image" alt="">
         <h2 id="winner"></h2>
+        <p id="winner-note" class="winner-note"></p>
         <button id="again-button">JUGAR OTRA VEZ</button>
       </div>
     </section>
@@ -839,16 +891,20 @@
 
   <script>
     // Las claves "rudo" y "tecnico" se mantienen por las elecciones guardadas en el navegador.
+    // "real" es quién hay debajo de la máscara. Karla no lleva: apuesta la cabellera.
     const fighters = {
-      rudo: { name: "El Enmascarado de Terciopelo", type: "RUDO", side: "rudo", image: "assets/enmascarado-de-terciopelo.svg" },
-      exterminador: { name: "El Exterminador", type: "RUDO", side: "rudo", image: "assets/el-exterminador.svg" },
-      viuda: { name: "La Viuda Negra", type: "RUDA", side: "rudo", image: "assets/la-viuda-negra.svg" },
-      toro: { name: "El Toro Salvaje", type: "RUDO", side: "rudo", image: "assets/el-toro-salvaje.svg" },
-      tecnico: { name: "Golden Fire", type: "TÉCNICO", side: "tecnico", image: "assets/golden-fire.svg" },
-      karla: { name: "Karla", type: "TÉCNICA", side: "tecnico", image: "assets/karla.svg" },
-      halcon: { name: "Halcón Plateado", type: "TÉCNICO", side: "tecnico", image: "assets/halcon-plateado.svg" },
-      estrella: { name: "Estrella Fugaz", type: "TÉCNICA", side: "tecnico", image: "assets/estrella-fugaz.svg" }
+      rudo: { name: "El Enmascarado de Terciopelo", type: "RUDO", side: "rudo", image: "assets/enmascarado-de-terciopelo.svg", real: ["Aurelio Fuentes", "sastre de Puebla"] },
+      exterminador: { name: "El Exterminador", type: "RUDO", side: "rudo", image: "assets/el-exterminador.svg", real: ["Bartolo Gómez", "fumigador de Monterrey"] },
+      viuda: { name: "La Viuda Negra", type: "RUDA", side: "rudo", image: "assets/la-viuda-negra.svg", real: ["Remedios Salas", "bibliotecaria de Oaxaca"] },
+      toro: { name: "El Toro Salvaje", type: "RUDO", side: "rudo", image: "assets/el-toro-salvaje.svg", real: ["Panchito Ruiz", "heladero de Toluca"] },
+      tecnico: { name: "Golden Fire", type: "TÉCNICO", side: "tecnico", image: "assets/golden-fire.svg", real: ["Ramón Dorado", "bombero de Guadalajara"] },
+      karla: { name: "Karla", type: "TÉCNICA", side: "tecnico", image: "assets/karla.svg", real: null },
+      halcon: { name: "Halcón Plateado", type: "TÉCNICO", side: "tecnico", image: "assets/halcon-plateado.svg", real: ["Eusebio Plata", "cartero jubilado de Veracruz"] },
+      estrella: { name: "Estrella Fugaz", type: "TÉCNICA", side: "tecnico", image: "assets/estrella-fugaz.svg", real: ["Lupita Estrada", "astrónoma de Mérida"] }
     };
+    // Los retratos sin máscara y la máscara sola los genera tools/make_fighters.py.
+    const unmaskedImage = key => fighters[key].image.replace(".svg", "-sin-mascara.svg");
+    const maskImage = key => fighters[key].image.replace(".svg", "-mascara.svg");
     const fighterKeys = Object.keys(fighters);
     const sides = [["rudo", "RUDOS"], ["tecnico", "TÉCNICOS"]];
     // Por defecto se enfrentan un rudo y un técnico.
@@ -982,6 +1038,9 @@
     // Caídas necesarias para ganar la lucha: 1 (a una caída) o 2 (dos de tres).
     let fallsToWin = 2;
     try { if (localStorage.getItem("lucha-falls") === "1") fallsToWin = 1; } catch (error) { /* sin almacenamiento */ }
+    // Máscara contra máscara: al final, quien pierde se quita la máscara.
+    let maskMatch = false;
+    try { maskMatch = localStorage.getItem("lucha-mask") === "1"; } catch (error) { /* sin almacenamiento */ }
 
     const $ = (selector) => document.querySelector(selector);
     const pick = (options) => options[Math.floor(Math.random() * options.length)];
@@ -1148,9 +1207,153 @@
       speech.muted = !speech.muted;
       if (speech.muted) stopNarration();
       try { localStorage.setItem("lucha-muted", speech.muted ? "1" : "0"); } catch (error) { /* sin almacenamiento */ }
+      if (sfx.out) sfx.out.gain.value = speech.muted ? 0 : SFX_VOLUME;
       renderMuteButton();
     });
     renderMuteButton();
+
+    /* ---------- Efectos de sonido ---------- */
+    // Se sintetizan con Web Audio: no hay archivos que descargar.
+    const SFX_VOLUME = 0.6;
+    const sfx = { out: null, noise: null };
+
+    // Usa el mismo contexto de audio que el medidor del público (wakeAudio).
+    function sfxContext() {
+      const ctx = wakeAudio();
+      if (ctx && !sfx.out) {
+        sfx.out = ctx.createGain();
+        sfx.out.gain.value = speech.muted ? 0 : SFX_VOLUME;
+        sfx.out.connect(ctx.destination);
+        const length = ctx.sampleRate * 2;
+        sfx.noise = ctx.createBuffer(1, length, ctx.sampleRate);
+        const data = sfx.noise.getChannelData(0);
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      return ctx;
+    }
+    // El navegador solo deja sonar el audio después de que el jugador toque algo.
+    document.addEventListener("pointerdown", sfxContext);
+    document.addEventListener("keydown", sfxContext);
+
+    function playSfx(sound) {
+      if (speech.muted) return;
+      const ctx = sfxContext();
+      if (ctx) sound(ctx);
+    }
+
+    function envelope(ctx, start, peak, attack, duration) {
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(peak, start + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      gain.connect(sfx.out);
+      return gain;
+    }
+
+    // Un tono que puede deslizarse de una frecuencia a otra y vibrar (el silbato).
+    function tone(ctx, { type = "sine", from, to = from, duration, peak, attack = 0.005, delay = 0, vibrato = 0 }) {
+      const start = ctx.currentTime + delay;
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(from, start);
+      if (to !== from) osc.frequency.exponentialRampToValueAtTime(to, start + duration);
+      if (vibrato) {
+        const lfo = ctx.createOscillator();
+        const depth = ctx.createGain();
+        lfo.frequency.value = 28;
+        depth.gain.value = vibrato;
+        lfo.connect(depth).connect(osc.frequency);
+        lfo.start(start);
+        lfo.stop(start + duration + 0.05);
+      }
+      osc.connect(envelope(ctx, start, peak, attack, duration));
+      osc.start(start);
+      osc.stop(start + duration + 0.05);
+    }
+
+    // Ruido filtrado: golpes, público, platillos.
+    function noise(ctx, { filter = "lowpass", freq, toFreq = freq, q = 1, duration, peak, attack = 0.005, delay = 0, flutter = 0 }) {
+      const start = ctx.currentTime + delay;
+      const source = ctx.createBufferSource();
+      source.buffer = sfx.noise;
+      const biquad = ctx.createBiquadFilter();
+      biquad.type = filter;
+      biquad.Q.value = q;
+      biquad.frequency.setValueAtTime(freq, start);
+      if (toFreq !== freq) biquad.frequency.exponentialRampToValueAtTime(toFreq, start + duration);
+      let node = source.connect(biquad);
+      if (flutter) {
+        // Corta el ruido muchas veces por segundo: suena a tela que se rasga.
+        const chop = ctx.createGain();
+        const lfo = ctx.createOscillator();
+        const depth = ctx.createGain();
+        chop.gain.value = 0.5;
+        lfo.type = "square";
+        lfo.frequency.value = flutter;
+        depth.gain.value = 0.5;
+        lfo.connect(depth).connect(chop.gain);
+        lfo.start(start);
+        lfo.stop(start + duration + 0.05);
+        node = node.connect(chop);
+      }
+      node.connect(envelope(ctx, start, peak, attack, duration));
+      source.start(start, Math.random());
+      source.stop(start + duration + 0.05);
+    }
+
+    const sounds = {
+      // Campana del ring: parciales inarmónicos que se apagan despacio.
+      bell(ctx, times = 3) {
+        for (let i = 0; i < times; i++) {
+          [[1, 0.35], [2.76, 0.16], [5.4, 0.08]].forEach(([ratio, peak]) => {
+            tone(ctx, { from: 830 * ratio, duration: 1.3 / Math.sqrt(ratio), peak, delay: i * 0.3 });
+          });
+        }
+      },
+      punch(ctx, power = 1) {
+        tone(ctx, { from: 170, to: 45, duration: 0.22, peak: Math.min(1, 0.8 * power) });
+        noise(ctx, { freq: 2600, toFreq: 300, duration: 0.13, peak: Math.min(0.8, 0.45 * power) });
+      },
+      superPunch(ctx) {
+        noise(ctx, { filter: "bandpass", freq: 300, toFreq: 3200, q: 2, duration: 0.3, peak: 0.45, attack: 0.22 });
+        tone(ctx, { from: 190, to: 40, duration: 0.3, peak: 1, delay: 0.25 });
+        tone(ctx, { from: 70, to: 28, duration: 1.1, peak: 0.8, delay: 0.25 });
+        noise(ctx, { freq: 3000, toFreq: 200, duration: 0.25, peak: 0.8, delay: 0.25 });
+        sounds.crash(ctx, 0.3);
+      },
+      // Caída a la lona: golpe sordo y las cuerdas que tiemblan.
+      thud(ctx, delay = 0) {
+        tone(ctx, { from: 95, to: 32, duration: 0.6, peak: 1, delay });
+        noise(ctx, { freq: 420, duration: 0.35, peak: 0.6, delay });
+        noise(ctx, { filter: "bandpass", freq: 1300, q: 9, duration: 0.45, peak: 0.12, delay: delay + 0.04 });
+      },
+      whistle(ctx) {
+        tone(ctx, { from: 2900, duration: 0.14, peak: 0.22, attack: 0.01, vibrato: 120 });
+        tone(ctx, { from: 2900, to: 2750, duration: 0.5, peak: 0.22, attack: 0.01, delay: 0.2, vibrato: 140 });
+      },
+      crowd(ctx, level = 1, duration = 2.8) {
+        noise(ctx, { filter: "bandpass", freq: 850, q: 0.6, duration, peak: 0.22 * level, attack: 0.35 });
+        noise(ctx, { filter: "bandpass", freq: 2300, q: 1, duration: duration * 0.8, peak: 0.08 * level, attack: 0.3 });
+      },
+      // "¡Uuuh!" del público cuando alguien cae.
+      gasp(ctx, delay = 0) {
+        noise(ctx, { filter: "bandpass", freq: 560, toFreq: 330, q: 3, duration: 1.3, peak: 0.3, attack: 0.18, delay });
+      },
+      crash(ctx, delay = 0) {
+        noise(ctx, { filter: "highpass", freq: 4500, duration: 1.6, peak: 0.3, delay });
+        noise(ctx, { filter: "bandpass", freq: 7500, q: 2, duration: 1.1, peak: 0.15, delay });
+      },
+      rip(ctx) {
+        noise(ctx, { filter: "highpass", freq: 900, toFreq: 2400, duration: 0.5, peak: 0.6, attack: 0.02, flutter: 38 });
+      },
+      // Redoble de tambor que crece antes de quitar la máscara.
+      drumroll(ctx, duration = 2.4) {
+        const hits = Math.round(duration / 0.05);
+        for (let i = 0; i < hits; i++) {
+          noise(ctx, { filter: "bandpass", freq: 1800, q: 0.8, duration: 0.07, peak: 0.06 + 0.24 * i / hits, delay: i * 0.05 });
+        }
+      }
+    };
 
     /* ---------- Inicio y elección de luchadores ---------- */
     $("#start-button").addEventListener("click", () => {
@@ -1245,7 +1448,18 @@
       document.querySelectorAll("[data-falls]").forEach(button => {
         button.setAttribute("aria-checked", String(Number(button.dataset.falls) === fallsToWin));
       });
+      document.querySelectorAll("[data-bet]").forEach(button => {
+        button.setAttribute("aria-checked", String((button.dataset.bet === "1") === maskMatch));
+      });
     }
+    document.querySelectorAll("[data-bet]").forEach(button => {
+      button.addEventListener("click", () => {
+        maskMatch = button.dataset.bet === "1";
+        try { localStorage.setItem("lucha-mask", maskMatch ? "1" : "0"); } catch (error) { /* sin almacenamiento */ }
+        renderFormatPicker();
+        say(maskMatch ? "¡Máscara contra máscara!" : "Sin apuesta");
+      });
+    });
     document.querySelectorAll("[data-falls]").forEach(button => {
       button.addEventListener("click", () => {
         fallsToWin = Number(button.dataset.falls);
@@ -1470,6 +1684,7 @@
       selectedTarget = opponents.length === 1 ? opponents[0] : null;
       clearEffects();
       updateStage();
+      if (kind === "start" || kind === "fall") playSfx(sounds.bell);
       const line = introNarration(kind);
       $("#intro-line").textContent = `🎙️ ${line}`;
       narrate(line);
@@ -1529,6 +1744,7 @@
           ]);
         }
       }
+      if (kind === "start" && maskMatch) line += " ¡Y atención, que esta noche es máscara contra máscara!";
       if (multi) line += " ¿A quién atacará?";
       return line;
     }
@@ -1797,6 +2013,7 @@
       const attackerCard = cardOf(outcome.attacker);
       const defenderCard = cardOf(outcome.defender);
       if (outcome.invalid) {
+        playSfx(sounds.whistle);
         attackerCard.classList.add("fumbled");
         const stamp = attackerCard.querySelector(".card-stamp");
         stamp.textContent = "NULO";
@@ -1804,6 +2021,8 @@
         return;
       }
       attackerCard.classList.add(outcome.isSuper ? "super-strike" : "striking");
+      if (outcome.isSuper) playSfx(sounds.superPunch);
+      else playSfx(ctx => sounds.punch(ctx, outcome.isStrong ? 1.3 : 1));
       if (outcome.guard === "blocked") {
         defenderCard.classList.add("blocked");
         defenderCard.querySelector(".damage-pop").textContent = "0";
@@ -1815,6 +2034,10 @@
       defenderCard.querySelector(".damage-pop").textContent = `-${outcome.damage}`;
       defenderCard.classList.add("damaged");
       if (outcome.knockdown) {
+        playSfx(ctx => {
+          sounds.thud(ctx, 0.25);
+          sounds.gasp(ctx, 0.3);
+        });
         defenderCard.classList.add("ko");
         const stamp = defenderCard.querySelector(".card-stamp");
         stamp.textContent = "K.O.";
@@ -1837,6 +2060,7 @@
       void card.offsetWidth; // reinicia las animaciones
       card.querySelector(".damage-pop").textContent = `+${outcome.riseHp}`;
       stamp.textContent = "¡ARRIBA!";
+      playSfx(ctx => sounds.crowd(ctx, 1, 2.4));
       stamp.classList.add("up", "show");
       card.classList.add("rising");
     }
@@ -2357,7 +2581,7 @@
       $("#celebration-sub").textContent = wonMatch ? "¡GANA LA LUCHA!" : `¡SE LLEVA LA CAÍDA ${totalFalls()}!`;
       $("#scoreboard").textContent = "MARCADOR · " + players.map(player => `${player.label} ${player.falls}`).join(" · ");
       const button = $("#celebration-continue");
-      button.textContent = wonMatch ? "VER AL CAMPEÓN 🏆" : "SIGUIENTE CAÍDA ▶";
+      button.textContent = !wonMatch ? "SIGUIENTE CAÍDA ▶" : maskMatch ? "🎭 ¡A COBRAR LA APUESTA!" : "VER AL CAMPEÓN 🏆";
       button.disabled = true;
       button.classList.remove("ready");
       celebrationAction = wonMatch
@@ -2367,6 +2591,10 @@
       overlay.classList.remove("open");
       void overlay.offsetWidth;
       overlay.classList.add("open");
+      playSfx(ctx => {
+        sounds.bell(ctx, wonMatch ? 5 : 3);
+        sounds.crowd(ctx, wonMatch ? 1.4 : 1.1, 3.8);
+      });
 
       const token = ++flowToken;
       const others = players.filter((_, i) => i !== scorerIndex);
@@ -2708,13 +2936,87 @@
       if (event.key === "Escape") closeFreeAttack();
     });
 
+    /* ---------- Máscara contra máscara ---------- */
+    let unmaskQueue = [];
+    let unmaskWinner = null;
+    let unmaskRevealed = false;
+
+    // Cada perdedor, por turnos, se quita la máscara (o le cortan la cabellera).
+    function startUnmasking(winnerIndex) {
+      unmaskWinner = winnerIndex;
+      unmaskQueue = players.map((_, i) => i).filter(i => i !== winnerIndex);
+      show("unmask-screen");
+      showNextUnmask();
+    }
+
+    function showNextUnmask() {
+      const player = players[unmaskQueue[0]];
+      const info = fighters[player.fighter];
+      const hair = !info.real;
+      unmaskRevealed = false;
+      $("#unmask-stage").classList.remove("revealed");
+      $("#unmask-full").src = info.image;
+      $("#unmask-full").alt = info.name;
+      $("#unmask-face").src = unmaskedImage(player.fighter);
+      $("#unmask-piece").src = maskImage(player.fighter);
+      $("#unmask-title").textContent = hair ? "¡CABELLERA EN JUEGO!" : "¡MÁSCARA CONTRA MÁSCARA!";
+      $("#unmask-name").textContent = player.label.toUpperCase();
+      $("#unmask-reveal").textContent = hair ? "Apostó su cabellera… y la perdió." : "Apostó su máscara… y la perdió.";
+      const button = $("#unmask-button");
+      button.textContent = hair ? "✂️ ¡A RAPARLA!" : "🎭 ¡QUITAR LA MÁSCARA!";
+      button.disabled = false;
+      button.focus();
+      playSfx(sounds.drumroll);
+      narrate(hair
+        ? `¡${player.spoken} apostó su cabellera y la ha perdido! ¡Que traigan las tijeras!`
+        : `¡${player.spoken} apostó su máscara y la ha perdido! ¡Por fin vamos a ver su cara!`);
+    }
+
+    $("#unmask-button").addEventListener("click", () => {
+      if (unmaskRevealed) {
+        unmaskQueue.shift();
+        if (unmaskQueue.length) showNextUnmask();
+        else showWinner(unmaskWinner);
+        return;
+      }
+      unmaskRevealed = true;
+      const player = players[unmaskQueue[0]];
+      const info = fighters[player.fighter];
+      $("#unmask-stage").classList.add("revealed");
+      $("#unmask-face").alt = info.real ? info.real[0] : `${info.name} rapada`;
+      playSfx(sounds.rip);
+      playSfx(sounds.crash);
+      playSfx(ctx => sounds.crowd(ctx, 1.3, 3.5));
+      if (info.real) {
+        const [name, job] = info.real;
+        $("#unmask-reveal").innerHTML = `Su verdadero nombre es <strong>${name}</strong>, ${job}.`;
+        narrate(`¡Se quita la máscara! ¡${player.spoken} es en realidad ${name}, ${job}! ¡Increíble!`);
+      } else {
+        $("#unmask-reveal").innerHTML = `¡<strong>${escapeHtml(player.label)}</strong> se queda pelona!`;
+        narrate(`¡Zas, zas, zas! ¡${player.spoken} se queda pelona! ¡El público no lo puede creer!`);
+      }
+      const button = $("#unmask-button");
+      button.textContent = unmaskQueue.length > 1 ? "SIGUIENTE ▶" : "VER AL CAMPEÓN 🏆";
+      // El botón espera a que la máscara haya salido volando.
+      button.disabled = true;
+      setTimeout(() => { button.disabled = false; button.focus(); }, 1200);
+    });
+
     /* ---------- Final ---------- */
     function endGame(winnerIndex) {
+      if (maskMatch) startUnmasking(winnerIndex);
+      else showWinner(winnerIndex);
+    }
+
+    function showWinner(winnerIndex) {
       const winner = players[winnerIndex];
-      $("#winner-image").src = fighters[winner.fighter].image;
-      $("#winner-image").alt = fighters[winner.fighter].name;
+      const info = fighters[winner.fighter];
+      $("#winner-image").src = info.image;
+      $("#winner-image").alt = info.name;
       $("#winner").textContent = `¡${winner.label.toUpperCase()} GANA!`;
+      $("#winner-note").textContent = maskMatch ? (info.real ? "🎭 ¡Y conserva su máscara!" : "💇 ¡Y conserva su cabellera!") : "";
       show("winner-screen");
+      playSfx(ctx => sounds.crowd(ctx, 1.2, 3.5));
       narrate(`¡${winner.spoken} es el gran campeón de la noche!`);
     }
 

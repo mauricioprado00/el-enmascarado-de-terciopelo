@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" role="img" aria-labelledby="title">
+  <title id="title">Golden Fire</title>
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".32" r=".8">
+      <stop stop-color="#ff9a1f"/><stop offset="1" stop-color="#3a0a0a"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx=".5" cy=".42" r=".7">
+      <stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <radialGradient id="mask" cx=".36" cy=".3" r=".85">
+      <stop stop-color="#ffd66b"/><stop offset=".6" stop-color="#ff8a12"/><stop offset="1" stop-color="#b8420b"/>
+    </radialGradient>
+    <radialGradient id="skin" cx=".35" cy=".3" r=".9">
+      <stop stop-color="#f5c49a"/><stop offset="1" stop-color="#c98a60"/>
+    </radialGradient>
+    <linearGradient id="suit" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffd230"/><stop offset="1" stop-color="#c77700"/>
+    </linearGradient>
+    <linearGradient id="aura" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#ff4d00"/><stop offset=".6" stop-color="#ffb000"/><stop offset="1" stop-color="#fff1a0"/>
+    </linearGradient>
+    <linearGradient id="bone" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#cdbb94"/><stop offset="1" stop-color="#fffaf0"/>
+    </linearGradient>
+    <linearGradient id="feather" x1="1" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffffff"/><stop offset="1" stop-color="#9fb4cc"/>
+    </linearGradient>
+    <linearGradient id="curtain" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#2a0636"/><stop offset=".6" stop-color="#6d1a86"/><stop offset="1" stop-color="#3a0a4a"/>
+    </linearGradient>
+    <pattern id="dots" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="4.5" cy="4.5" r="1.6" fill="#fff"/>
+    </pattern>
+    <clipPath id="headClip"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z"/></clipPath>
+  </defs>
+  <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="420"><rect width="320" height="420" fill="#fff"/><g><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M104 140Q126 118 150 137Q128 158 104 140Z" fill="#000"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="#000"/></mask><path d="M110 84Q96 40 124 18Q128 50 144 54Q140 16 168 -2Q172 34 188 46Q198 22 216 20Q226 56 210 84Z" fill="url(#aura)" stroke="#5c1406" stroke-width="5" stroke-linejoin="round"/><g mask="url(#holes)"><path d="M160 50C212 50 240 90 238 140C236 186 206 222 160 226C114 222 84 186 82 140C80 90 108 50 160 50Z" fill="url(#mask)" stroke="#5c1406" stroke-width="7"/><g clip-path="url(#headClip)"><circle cx="236" cy="204" r="112" fill="#000" opacity=".22"/><ellipse cx="124" cy="84" rx="36" ry="17" transform="rotate(-28 124 84)" fill="#fff" opacity=".32"/></g><path d="M118 182Q160 168 202 182Q200 222 160 226Q120 222 118 182Z" fill="url(#skin)" stroke="#5c1406" stroke-width="6"/><path d="M150 172Q160 182 170 172" fill="none" stroke="#5c1406" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><path d="M122 106Q116 76 136 58Q136 82 148 88Q148 56 160 42Q172 56 172 88Q184 82 184 58Q204 76 198 106Q160 94 122 106Z" fill="#ffe14a" stroke="#5c1406" stroke-width="5" stroke-linejoin="round"/><g><path d="M88 150Q84 126 100 110Q102 124 112 124Q112 104 128 94Q126 112 138 112Q146 106 154 110L154 150Q120 168 88 150Z" fill="#ffe14a" stroke="#5c1406" stroke-width="5" stroke-linejoin="round"/></g><g transform="translate(320 0) scale(-1 1)"><path d="M88 150Q84 126 100 110Q102 124 112 124Q112 104 128 94Q126 112 138 112Q146 106 154 110L154 150Q120 168 88 150Z" fill="#ffe14a" stroke="#5c1406" stroke-width="5" stroke-linejoin="round"/></g></g>
+</svg>
