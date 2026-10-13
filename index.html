@@ -142,7 +142,7 @@
     .format-option[aria-checked="true"] { border-color: #ffd230; background: #d9263f; box-shadow: 0 4px 0 #7f1022, 0 0 14px #ffd23099; }
 
     /* ---------- Pantalla de pelea ---------- */
-    #game-screen { justify-content: flex-start; gap: 12px; }
+    #game-screen { justify-content: flex-start; gap: 12px; overflow-x: clip; }
     #fall-number { margin: 4px 56px 0; color: #ffd230; font-size: clamp(1rem, 3.5vw, 1.35rem); letter-spacing: 1px; }
     .stage { display: flex; width: min(1100px, 100%); flex-direction: column; align-items: center; gap: 14px; }
     .fighters { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; }
@@ -301,6 +301,66 @@
     .fighter-card.super-strike { border-color: #ffd230; box-shadow: 0 0 40px #ffd230; animation: super-lunge .7s ease-out; }
     @keyframes super-lunge { 30% { transform: translateX(-10px) scale(.96); } 55% { transform: translateX(44px) scale(1.12); } }
     .card-stamp.up { border-color: #35cf57; color: #35cf57; }
+    /* Turno doble: la carta brilla en dorado con un sello ×2 mientras dura. */
+    .fighter-card.extra-turn { border-color: #ffd230; animation: extra-glow .8s ease-in-out infinite alternate; }
+    .fighter-card.extra-turn::after {
+      content: "×2";
+      position: absolute;
+      top: -14px;
+      left: -12px;
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      color: #1c0b05;
+      font-size: 1.35rem;
+      background: radial-gradient(circle at 35% 30%, #fff6a8, #ffb300 70%);
+      box-shadow: 0 0 14px #ffd230;
+      transform: rotate(-12deg);
+      animation: x2-pop .5s cubic-bezier(.2, 1.8, .4, 1) both;
+      z-index: 3;
+    }
+    .compact.extra-turn::after { top: -10px; left: -8px; width: 34px; height: 34px; font-size: 1rem; }
+    .star-burst {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1.8rem;
+      pointer-events: none;
+      animation: star-fly 1.1s ease-out forwards;
+      z-index: 4;
+    }
+    .extra-banner {
+      position: fixed;
+      top: 38%;
+      left: 0;
+      width: 100%;
+      padding: 14px 0;
+      color: #1c0b05;
+      font-size: clamp(1.5rem, 8.5vw, 4.2rem);
+      letter-spacing: 2px;
+      white-space: nowrap;
+      background: linear-gradient(90deg, #ffd23000, #ffd230 15%, #ff9d24 50%, #ffd230 85%, #ffd23000);
+      text-shadow: 2px 2px #fff6a8;
+      pointer-events: none;
+      visibility: hidden;
+      z-index: 25;
+    }
+    .extra-banner.show { visibility: visible; animation: banner-sweep 1.9s ease-in-out forwards; }
+    @keyframes extra-glow { from { box-shadow: 0 0 16px #ffd23099; } to { box-shadow: 0 0 34px #ffd230, 0 0 60px #ff9d2488; } }
+    @keyframes x2-pop { from { transform: scale(0) rotate(-90deg); } }
+    @keyframes star-fly {
+      from { opacity: 1; transform: translate(-50%, -50%) scale(.4); }
+      to { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.3) rotate(240deg); }
+    }
+    @keyframes banner-sweep {
+      0% { transform: translateX(-100%) skewX(-12deg); }
+      20%, 75% { transform: translateX(0) skewX(-12deg); }
+      100% { transform: translateX(100%) skewX(-12deg); }
+    }
     .card-stamp.guard { border-color: #35cfa0; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
     .fighter-card.blocked { border-color: #35cfa0; box-shadow: 0 0 30px #35cfa0aa; animation: wobble .6s; }
     .fighter-card.blocked .damage-pop { color: #35cfa0; animation: pop-up 1.6s ease-out forwards; }
@@ -869,6 +929,8 @@
     </div>
   </div>
 
+  <div id="extra-banner" class="extra-banner" aria-hidden="true">⭐ ¡TURNO DOBLE! ⭐</div>
+
   <div id="fall-celebration" class="fall-celebration" aria-live="assertive">
     <div class="rays"></div>
     <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
@@ -1346,6 +1408,12 @@
       rip(ctx) {
         noise(ctx, { filter: "highpass", freq: 900, toFreq: 2400, duration: 0.5, peak: 0.6, attack: 0.02, flutter: 38 });
       },
+      // Arpegio que sube: se gana un turno doble.
+      powerUp(ctx) {
+        [523, 659, 784, 1047, 1319].forEach((freq, i) => {
+          tone(ctx, { type: "triangle", from: freq, duration: 0.3, peak: 0.25, delay: i * 0.07 });
+        });
+      },
       // Redoble de tambor que crece antes de quitar la máscara.
       drumroll(ctx, duration = 2.4) {
         const hits = Math.round(duration / 0.05);
@@ -1606,6 +1674,8 @@
         const inMeal = phase === "meal";
         card.classList.toggle("out", isOut);
         card.classList.toggle("attacker", inMeal ? i === mealChooser() : isAttacker);
+        // En el resultado se apaga el brillo para que se vean la embestida y los golpes.
+        card.classList.toggle("extra-turn", !inMeal && phase !== "result" && isAttacker && isExtraTurn);
         card.classList.toggle("defender", isDefender);
         card.classList.toggle("option", isOption);
         card.classList.toggle("benched", inMeal ? isOut : phase !== "intro" && !isAttacker && !isDefender);
@@ -1685,6 +1755,7 @@
       clearEffects();
       updateStage();
       if (kind === "start" || kind === "fall") playSfx(sounds.bell);
+      if (isExtraTurn) burstStars(current);
       const line = introNarration(kind);
       $("#intro-line").textContent = `🎙️ ${line}`;
       narrate(line);
@@ -1949,6 +2020,8 @@
         if (token !== flowToken) return;
         applyOutcome(outcome);
         playHitEffects(outcome);
+        // El turno doble se anuncia cuando ya se ha visto el golpe.
+        if (outcome.extra) setTimeout(() => { if (token === flowToken) celebrateExtraTurn(outcome.attacker); }, 900);
         $("#message").innerHTML = resultHtml(outcome);
         // Desde la lona no se puede pasar de turno hasta que el público haya tenido su oportunidad.
         $("#next-button").disabled = outcome.knockdown;
@@ -2007,6 +2080,31 @@
       extraTurnPending = false;
       updateBars(outcome.attacker);
       updateBars(outcome.defender);
+    }
+
+    function celebrateExtraTurn(index) {
+      const banner = $("#extra-banner");
+      banner.classList.remove("show");
+      void banner.offsetWidth; // reinicia la animación
+      banner.classList.add("show");
+      burstStars(index);
+      playSfx(sounds.powerUp);
+    }
+
+    // Estrellas que salen disparadas desde la carta en todas direcciones.
+    function burstStars(index) {
+      const card = cardOf(index);
+      for (let i = 0; i < 10; i++) {
+        const angle = (i / 10) * Math.PI * 2;
+        const star = document.createElement("span");
+        star.className = "star-burst";
+        star.textContent = i % 3 ? "⭐" : "✨";
+        star.style.setProperty("--dx", `${Math.round(Math.cos(angle) * 120)}px`);
+        star.style.setProperty("--dy", `${Math.round(Math.sin(angle) * 120)}px`);
+        star.style.animationDelay = `${(i % 3) * 0.06}s`;
+        star.addEventListener("animationend", () => star.remove());
+        card.appendChild(star);
+      }
     }
 
     function playHitEffects(outcome) {
