@@ -333,33 +333,52 @@
       animation: star-fly 1.1s ease-out forwards;
       z-index: 4;
     }
-    .extra-banner {
+    /* Medallón ×2: se entiende sin leer. Aparece en el centro y vuela al sello de la carta. */
+    .extra-medal {
       position: fixed;
-      top: 38%;
-      left: 0;
-      width: 100%;
-      padding: 14px 0;
-      color: #1c0b05;
-      font-size: clamp(1.5rem, 8.5vw, 4.2rem);
-      letter-spacing: 2px;
-      white-space: nowrap;
-      background: linear-gradient(90deg, #ffd23000, #ffd230 15%, #ff9d24 50%, #ffd230 85%, #ffd23000);
-      text-shadow: 2px 2px #fff6a8;
+      top: 50%;
+      left: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
       pointer-events: none;
       visibility: hidden;
+      transform: translate(-50%, -50%);
       z-index: 25;
     }
-    .extra-banner.show { visibility: visible; animation: banner-sweep 1.9s ease-in-out forwards; }
+    .extra-medal.show { visibility: visible; animation: medal-fly 2.2s ease-in-out forwards; }
+    .medal-coin {
+      display: grid;
+      width: min(200px, 48vw);
+      aspect-ratio: 1;
+      place-items: center;
+      border: 6px solid #fff;
+      border-radius: 50%;
+      color: #1c0b05;
+      font-size: min(110px, 26vw);
+      line-height: 1;
+      background: radial-gradient(circle at 35% 30%, #fff6a8, #ffb300 70%);
+      box-shadow: 0 0 40px #ffd230, 0 0 90px #ff9d24;
+    }
+    .medal-fists { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: min(64px, 15vw); line-height: 1; }
+    .extra-medal.show .medal-coin { animation: medal-slam .55s cubic-bezier(.2, 1.8, .4, 1) both, medal-pulse .25s .6s 4 alternate; }
+    .extra-medal.show .medal-fists { animation: fists-punch .5s .35s both, fade-out .3s 1.25s forwards; }
     @keyframes extra-glow { from { box-shadow: 0 0 16px #ffd23099; } to { box-shadow: 0 0 34px #ffd230, 0 0 60px #ff9d2488; } }
     @keyframes x2-pop { from { transform: scale(0) rotate(-90deg); } }
     @keyframes star-fly {
       from { opacity: 1; transform: translate(-50%, -50%) scale(.4); }
       to { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.3) rotate(240deg); }
     }
-    @keyframes banner-sweep {
-      0% { transform: translateX(-100%) skewX(-12deg); }
-      20%, 75% { transform: translateX(0) skewX(-12deg); }
-      100% { transform: translateX(100%) skewX(-12deg); }
+    @keyframes medal-slam { from { opacity: 0; transform: scale(3) rotate(-30deg); } }
+    @keyframes medal-pulse { to { transform: scale(1.12); } }
+    @keyframes fists-punch { from { opacity: 0; transform: scale(.3); } 60% { transform: scale(1.3); } }
+    @keyframes fade-out { to { opacity: 0; } }
+    /* --tx y --ty llevan el medallón hasta la esquina de la carta, donde queda el sello ×2. */
+    @keyframes medal-fly {
+      0%, 62% { transform: translate(-50%, -50%); }
+      92% { opacity: 1; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(.22); }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(.22); }
     }
     .card-stamp.guard { border-color: #35cfa0; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
     .fighter-card.blocked { border-color: #35cfa0; box-shadow: 0 0 30px #35cfa0aa; animation: wobble .6s; }
@@ -929,7 +948,10 @@
     </div>
   </div>
 
-  <div id="extra-banner" class="extra-banner" aria-hidden="true">⭐ ¡TURNO DOBLE! ⭐</div>
+  <div id="extra-medal" class="extra-medal" aria-hidden="true">
+    <span class="medal-coin">×2</span>
+    <span class="medal-fists">👊👊</span>
+  </div>
 
   <div id="fall-celebration" class="fall-celebration" aria-live="assertive">
     <div class="rays"></div>
@@ -2083,10 +2105,14 @@
     }
 
     function celebrateExtraTurn(index) {
-      const banner = $("#extra-banner");
-      banner.classList.remove("show");
-      void banner.offsetWidth; // reinicia la animación
-      banner.classList.add("show");
+      const medal = $("#extra-medal");
+      // Destino: el centro del sello ×2 de la carta (esquina superior izquierda).
+      const card = cardOf(index).getBoundingClientRect();
+      medal.style.setProperty("--tx", `${Math.round(card.left + 11 - window.innerWidth / 2)}px`);
+      medal.style.setProperty("--ty", `${Math.round(card.top + 9 - window.innerHeight / 2)}px`);
+      medal.classList.remove("show");
+      void medal.offsetWidth; // reinicia la animación
+      medal.classList.add("show");
       burstStars(index);
       playSfx(sounds.powerUp);
     }
